@@ -1,0 +1,3 @@
+#!/bin/bash
+
+$OPENSHIFT_PYTHON_DIR/python $OPENSHIFT_REPO_DIR/crawler-test.py
