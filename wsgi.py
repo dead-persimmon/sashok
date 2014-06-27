@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 
+import html
+
 import os
 
 def request_env(environment):
-	return '\n'.join(['%s == %s' % (key, value) for key, value in environment.items()])
+	lines = []
+	max_key_width = len(max(environment.keys(), key = lambda x: len(x)))
+	for key, value in sorted(environment.items()):
+		lines += [('{:>%d}   {}' % max_key_width).format(key, html.escape(str(value)))]
+	return '\n'.join(lines)
 
 def request_root(environment):
 	return '/'
