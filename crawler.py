@@ -16,8 +16,8 @@ from bson.objectid import ObjectId as ObjectID
 
 import hashlib
 
-lock_file_name = 'crawler.lock'
-log_file_name = 'crawler.log'
+lock_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.lock'
+log_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.log'
 
 def log(message):
 	with open(log_file_name, 'a') as log_file:
