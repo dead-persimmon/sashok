@@ -59,8 +59,8 @@ for site, site_parser, page_offsets in sites:
 
 from pymongo import MongoClient
 
-with MongoClient('mongodb://localhost:27017/') as client:
-#with MongoClient(os.environ['OPENSHIFT_MONGODB_DB_URL']) as client:
+#with MongoClient('mongodb://localhost:27017/') as client:
+with MongoClient(os.environ['OPENSHIFT_MONGODB_DB_URL']) as client:
 	collection = client.sashok.torrents
 	for d in data:
 		collection.save(d)
