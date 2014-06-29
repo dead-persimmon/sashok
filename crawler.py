@@ -14,8 +14,6 @@ import re
 
 from bson.objectid import ObjectId as ObjectID
 
-import hashlib
-
 lock_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.lock'
 log_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.log'
 
