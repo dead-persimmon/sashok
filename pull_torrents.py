@@ -18,7 +18,7 @@ def pull_torrents(num_days = 3):
 	
 	with MongoClient(mongodb_url) as client:
 		collection = client.sashok.torrents
-		for torrent in collection.find({'timestamp': {'$gt': (ts_now - timedelta(days = num_days))}}):
+		for torrent in collection.find({'timestamp': {'$gte': (ts_now - timedelta(days = num_days))}}):
 			day = (ts_now - torrent['timestamp']).days
 			if not day in data.keys(): data[day] = []
 			unix_timestamp = calendar.timegm(torrent['timestamp'].utctimetuple())
