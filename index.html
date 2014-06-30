@@ -2,7 +2,7 @@
 <html ng-app='_app'>
 <head>
 	<meta charset="utf-8">
-	<title>My HTML File</title>
+	<title>ATL</title>
 	<script src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js'></script>
 </head>
 <body ng-controller='TorrentsController'>
@@ -31,7 +31,10 @@
 				<td valign='top' ng-repeat='day in torrents'>
 					<table width='100%'>
 						<tbody>
-							<tr ng-repeat='torrent in day'><td><a href='{{torrent.link}}'>{{torrent.title}}</a></td><td><b>{{(torrent.downloads / 1000).toFixed(0)}}</b>k</td></tr>
+							<tr ng-repeat='torrent in day'>
+								<td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
+								<td><b>{{(torrent.downloads / 1000).toFixed(1)}}</b>k</td>
+							</tr>
 						</tbody>
 					</table>
 				</td>
