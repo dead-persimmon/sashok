@@ -1,0 +1,43 @@
+﻿<!doctype html>
+<html ng-app='_app'>
+<head>
+	<meta charset="utf-8">
+	<title>My HTML File</title>
+	<script src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js'></script>
+</head>
+<body ng-controller='TorrentsController'>
+	<style>
+		* { font-family: Consolas; font-size: 8pt; text-decoration: none; color: #404040; }
+		a:visited { color: silver; }
+	</style>
+
+	<script>
+		var _app = angular.module('_app', []);
+		
+		console.log(_app);
+		
+		_app.controller('TorrentsController', ['$scope', '$http', function ($scope, $http) {
+			$http.get('/pull_torrents').success(function (data) {
+				$scope.torrents = data;
+			});
+		}]);
+		
+
+	</script>
+	
+	<table width='100%' cellspacing='25'>
+		<tbody>
+			<tr>
+				<td valign='top' ng-repeat='day in torrents'>
+					<table width='100%'>
+						<tbody>
+							<tr ng-repeat='torrent in day'><td><a href='{{torrent.link}}'>{{torrent.title}}</a></td><td><b>{{(torrent.downloads / 1000).toFixed(0)}}</b>k</td></tr>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+
+</body>
+</html>
