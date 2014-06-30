@@ -1,6 +1,10 @@
 ﻿__LOCAL = False
-if __LOCAL: mongodb_url = 'mongodb://localhost:27017/'
-else: mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
+
+if __LOCAL:
+	mongodb_url = 'mongodb://localhost:27017/'
+else:
+	import os
+	mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
 
 from pymongo import MongoClient
 from datetime import datetime, timedelta
