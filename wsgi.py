@@ -16,7 +16,7 @@ def request_torrents(environment):
 	return pull_torrents(3)
 
 def request_root(environment):
-	return open('index.html', 'rb').read()
+	return open(environment['OPENSHIFT_REPO_DIR'] + 'index.html', 'rb').read()
 
 def application(environment, start_response):
 	request_map = {'/': request_root, '/env': request_env, '/pull_torrents': request_torrents}
