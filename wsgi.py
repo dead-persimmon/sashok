@@ -16,7 +16,7 @@ def request_torrents(environment):
 	return pull_torrents(3)
 
 def request_root(environment):
-	return '/'
+	return open('index.html', 'rb').read()
 
 def application(environment, start_response):
 	request_map = {'/': request_root, '/env': request_env, '/pull_torrents': request_torrents}
@@ -25,13 +25,11 @@ def application(environment, start_response):
 	if request in request_map.keys(): reply = request_map[request](environment)
 	else: reply = 'invalid request'
 
-	response_body = '<html><body><pre>%s</pre></body></html>' % reply
-
 	status = '200 OK'
-	response_headers = [('Content-Type', 'text/html'), ('Content-Length', str(len(response_body)))]
+	response_headers = [('Content-Type', 'text/html'), ('Content-Length', str(len(reply)))]
 
 	start_response(status, response_headers)
-	return [response_body.encode('utf-8')]
+	return [reply]
 
 if __name__ == '__main__':
 	from wsgiref.simple_server import make_server
