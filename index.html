@@ -17,7 +17,7 @@
 		console.log(_app);
 		
 		_app.controller('TorrentsController', ['$scope', '$http', function ($scope, $http) {
-			$http.get('/pull_torrents').success(function (data) {
+			$http.get('pull_torrents').success(function (data) {
 				$scope.torrents = data;
 			});
 		}]);

@@ -1,6 +1,6 @@
-﻿__LOCAL = False
+﻿import debug
 
-if __LOCAL:
+if debug.local_run():
 	mongodb_url = 'mongodb://localhost:27017/'
 else:
 	import os
@@ -22,11 +22,11 @@ def pull_torrents(num_days = 3):
 			day = (ts_now - torrent['timestamp']).days
 			if not day in data.keys(): data[day] = []
 			unix_timestamp = calendar.timegm(torrent['timestamp'].utctimetuple())
-			data[day].append({'title': torrent['title'], 'link': torrent['torrent_link'], 'timestamp': unix_timestamp, 'seeders': torrent['seeders'], 'leechers': torrent['leechers'], 'downloads': torrent['downloads']})
+			data[day].append({'title': torrent['title'], 'link': torrent['link'], 'timestamp': unix_timestamp, 'seeders': torrent['seeders'], 'leechers': torrent['leechers'], 'downloads': torrent['downloads']})
 
 	for key in data.keys():
 		data[key].sort(key = lambda torrent: -int(torrent['downloads']))
 	return json.dumps(data)
 
-#with open('test.json', 'a') as f:
+#with open('pull_torrents', 'a') as f:
 #	f.write(pull_torrents(3))

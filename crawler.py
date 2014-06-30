@@ -1,27 +1,23 @@
 ﻿import time
 from datetime import datetime
-
-import os
-
 from os.path import isfile as is_file
-from os import remove as del_file
-from os import linesep as line_sep
-
+from os import remove as del_file, linesep as line_sep
 from urllib.request import urlopen as open_url
 import xml.etree.ElementTree as ET
-
-import re
-
+from pymongo import MongoClient
 from bson.objectid import ObjectId as ObjectID
 
-__LOCAL = False
+import debug
 
-if __LOCAL:
+if debug.local_run():
 	lock_file_name = 'crawler.lock'
 	log_file_name = 'crawler.log'
+	mongodb_url = 'mongodb://localhost:27017/'
 else:
-	lock_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.lock'
-	log_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.log'
+	from os import environ as environment
+	lock_file_name = environment['OPENSHIFT_REPO_DIR'] + 'crawler.lock'
+	log_file_name = environment['OPENSHIFT_REPO_DIR'] + 'crawler.log'
+	mongodb_url = environment['OPENSHIFT_MONGODB_DB_URL']
 
 ts_now = datetime.utcnow()
 
@@ -37,8 +33,7 @@ if is_file(lock_file_name):
 
 open(lock_file_name, 'a').close()
 
-data = []
-
+import re
 def nyaa_rss_parser(tree):
 	oldest_torrent_ts = ts_now
 	for item in tree.findall('.//item'):
@@ -49,12 +44,13 @@ def nyaa_rss_parser(tree):
 			#timestamp = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S %z')
 			torrent_ts = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S +0000')
 			oldest_torrent_ts = min(oldest_torrent_ts, torrent_ts)
-			data.append({'_id': id, 'title': title, 'torrent_link': torrent_link, 'seeders': s, 'leechers': l, 'downloads': d, 'timestamp': torrent_ts})
+			torrents.append({'_id': id, 'title': title, 'link': torrent_link, 'seeders': s, 'leechers': l, 'downloads': d, 'timestamp': torrent_ts})
 		except Exception as exception:
 			log(exception)
 	return ts_now - oldest_torrent_ts
 
 sites = [('http://www.nyaa.se/?page=rss&cats=1_37&filter=2&offset=%d', nyaa_rss_parser)]
+torrents = []
 
 for site, site_parser in sites:
 	try:
@@ -62,27 +58,15 @@ for site, site_parser in sites:
 		while True:
 			tree = ET.parse(open_url(site % page_offset))
 			oldest_torrent = site_parser(tree)
-			print(oldest_torrent)
-			if oldest_torrent.days <= 7:
-				page_offset += 1
-				continue
-			else:
-				break
+			if oldest_torrent.days < 7: page_offset += 1
+			else: break
 	except Exception as exception:
 		log(exception)
 
-from pymongo import MongoClient
-
-if __LOCAL:
-	mongodb_url = 'mongodb://localhost:27017/'
-else:
-	mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
-
 with MongoClient(mongodb_url) as client:
 	collection = client.sashok.torrents
-	for d in data:
-		collection.save(d)
+	for torrent in torrents: collection.save(torrent)
 
-log('Polled %d items.' % len(data))
+log('Collected %d items.' % len(torrents))
 
 del_file(lock_file_name)
