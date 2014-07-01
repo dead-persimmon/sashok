@@ -16,6 +16,23 @@
             $scope.sortReverse = true;
             $scope.torrentsPerDay = 15;
             $scope.filterString = '';
+            
+            $scope.filterTorrentTitle = function (torrent) {
+                var tokens = $scope.filterString;
+                tokens = tokens.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+                tokens = tokens.split(' ');
+                var regExp = [];
+                for (var i = 0; i < tokens.length; i += 1) {
+                    if (tokens[i]) regExp.push('(' + tokens[i] + ')');
+                }
+                if (regExp.length > 0) {
+                    regExp = '.*' + regExp.join('.*') + '.*';
+                    regExp = RegExp(regExp, 'i');
+                    return regExp.test(torrent.title);
+                } else {
+                    return true;
+                }
+            };
         
             $scope.pullTorrents = function () {
                 request = ['pull_torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
@@ -34,7 +51,7 @@
     </script>
 
     <style>
-        * { font-family: Calibri; font-size: 10pt; }
+        table td { font-family: 'Calibri'; font-size: 10pt; }
         body { padding-top: 70px; padding-bottom: 15px; }
         a { color: #303030; }
         a:visited { color: silver; }
@@ -53,7 +70,7 @@
                     <input type='text' class='form-control' ng-model='filterString' value='{{filterString}}' />
                 </div>
             </form>
-            <p class='navbar-text'>Order by:</p>
+            <p class='navbar-text'>Order by</p>
             <div class="btn-group">
                 <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "title"}' ng-click='sortField = "title"'>Title</button>
                 <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "seeders"}' ng-click='sortField = "seeders"'>Seeders</button>
@@ -73,25 +90,27 @@
                 ng-repeat='day in torrents'
                 ng-show='filteredDay.length > 0'>
             <div class="panel panel-default">
-            <div class="panel-heading">Day &minus;{{$index}}</div>
+            <div class="panel-heading">
+                Day &minus;<b>{{$index}}</b>
+                <span class='pull-right' ng-show='day.length > filteredDay.length'><i>Showing {{filteredDay.length}} out of {{day.length}} torrents.</i></span>
+            </div>
                 <table class='table table-condensed table-hover'>
+                    <!--
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>S</th>
+                            <th>L</th>
+                            <th>D</th>
+                        </tr>
+                    </thead>
+                    -->
                     <tbody>
-                        <thead>
-                            <tr>
-                                <th>File</th>
-                                <th>S</th>
-                                <th>L</th>
-                                <th>D</th>
-                            </tr>
-                        </thead>
-                        <tr ng-repeat='torrent in filteredDay = (day | filter:filterString | orderBy:sortField:sortReverse | limitTo:torrentsPerDay)'>
+                        <tr ng-repeat='torrent in filteredDay = (day | filter:filterTorrentTitle | orderBy:sortField:sortReverse | limitTo:torrentsPerDay)'>
                             <td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
                             <td>{{(torrent.seeders / 1000).toFixed(1)}}</td>
                             <td>{{(torrent.leechers / 1000).toFixed(1)}}</td>
                             <td>{{(torrent.downloads / 1000).toFixed(1)}}</td>
-                        </tr>
-                        <tr>
-                            <td colspan='4' ng-show='day.length > filteredDay.length'><i>Showing {{filteredDay.length}} out of {{day.length}} torrents.</i></td>
                         </tr>
                     </tbody>
                 </table>
