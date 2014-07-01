@@ -28,5 +28,5 @@ def pull_torrents(num_days = 2, offset = 0):
             torrents[day].append(torrent)
     return json.dumps(torrents)
 
-with open('pull_torrents', 'w+') as f:
-    f.write(pull_torrents(4, 0))
+#with open('pull_torrents', 'w+') as f:
+#    f.write(pull_torrents(4, 0))
