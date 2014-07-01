@@ -34,6 +34,7 @@
     </script>
 
     <style>
+        * { font-family: Calibri; font-size: 10pt; }
         body { padding-top: 70px; padding-bottom: 15px; }
         a { color: #303030; }
         a:visited { color: silver; }
@@ -41,13 +42,14 @@
 
     <div class='navbar navbar-default navbar-fixed-top'>
         <div class='container-fluid'>
+            <div class="navbar-header"><a class="navbar-brand" href="/">Refresh</a></div>
             <form class='navbar-form navbar-left'>
                 <div class='input-group'>
-                    <div class='input-group-addon'>Torrents per day:</div>
+                    <div class='input-group-addon'>Torrents per day</div>
                     <input type='text' class='form-control' ng-model='torrentsPerDay' value='{{torrentsPerDay}}' />
                 </div>
                 <div class='input-group'>
-                    <div class='input-group-addon'>Filter:</div>
+                    <div class='input-group-addon'>Filter</div>
                     <input type='text' class='form-control' ng-model='filterString' value='{{filterString}}' />
                 </div>
             </form>
@@ -68,12 +70,13 @@
     <div class='container-fluid'>
         <div class='row'>
             <div class='col-md-6' ng-repeat='day in torrents'>
-                <h3>Day {{-$index}}</h3>
+            <div class="panel panel-default">
+            <div class="panel-heading">Day &minus;{{$index}}</div>
                 <table class='table table-condensed table-hover'>
                     <tbody>
                         <thead>
                             <tr>
-                                <th>Title</th>
+                                <th>File</th>
                                 <th>S</th>
                                 <th>L</th>
                                 <th>D</th>
@@ -81,12 +84,16 @@
                         </thead>
                         <tr ng-repeat='torrent in day | orderBy:sortField:sortReverse | filter:filterString | limitTo:torrentsPerDay'>
                             <td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
-                            <td>{{torrent.seeders | number}}</td>
-                            <td>{{torrent.leechers | number}}</td>
-                            <td>{{torrent.downloads | number}}</td>
+                            <td>{{(torrent.seeders / 1000).toFixed(1)}}</td>
+                            <td>{{(torrent.leechers / 1000).toFixed(1)}}</td>
+                            <td>{{(torrent.downloads / 1000).toFixed(1)}}</td>
+                        </tr>
+                        <tr>
+                            <td colspan='4' ng-show='day.length > torrentsPerDay'><i>Showing {{torrentsPerDay}} out of {{day.length}} torrents.</i></td>
                         </tr>
                     </tbody>
                 </table>
+            </div>
             </div>
             <div class='col-md-12'>
                 <button class='btn btn-primary btn-lg btn-block' ng-click='pullTorrents()'>More...</button>
