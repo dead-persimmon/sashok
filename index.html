@@ -54,9 +54,9 @@
             <p class='navbar-text'>Order by:</p>
             <div class="btn-group">
                 <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "title"}' ng-click='sortField = "title"; sortReverse = !sortReverse'>Title</button>
-                <button type="button" class="btn btn-default navbar-btn">Seeders</button>
-                <button type="button" class="btn btn-default navbar-btn">Leechers</button>
-                <button type="button" class="btn btn-default navbar-btn">Downloads</button>
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "seeders"}' ng-click='sortField = "seeders"; sortReverse = !sortReverse'>Seeders</button>
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "leechers"}' ng-click='sortField = "leechers"; sortReverse = !sortReverse'>Leechers</button>
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "downloads"}' ng-click='sortField = "downloads"; sortReverse = !sortReverse'>Downloads</button>
             </div>            
         </div>
     </div>
