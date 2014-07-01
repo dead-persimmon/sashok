@@ -20,10 +20,7 @@
             $scope.pullTorrents = function () {
                 request = ['pull_torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
                 $http.get(request).success(function (data) {
-                    for (var prop in data) {
-                        console.log(prop);
-                        $scope.torrents[prop] = data[prop];
-                    }
+                    $scope.torrents = $scope.torrents.concat(data);
                     $scope.currentOffset += $scope.daysPerRequest;
                 });
             };
@@ -31,7 +28,7 @@
             $scope.daysPerRequest = 2;
             $scope.currentOffset = 0;
             
-            $scope.torrents = {};
+            $scope.torrents = [];
             $scope.pullTorrents();
         }]);
     </script>

@@ -12,7 +12,7 @@ import calendar
 import json
 
 def pull_torrents(num_days = 2, offset = 0):
-    torrents = dict()
+    torrents = [[] for _ in range(num_days)]
 
     ts_now = datetime.utcnow()
     
@@ -23,11 +23,10 @@ def pull_torrents(num_days = 2, offset = 0):
         collection = client.sashok.torrents
         for torrent in collection.find({ '$and': [{ 'timestamp': { '$lte': ts_ceil } }, { 'timestamp': { '$gte': ts_floor } }] }):
             day = (ts_now - torrent['timestamp']).days
-            if not day in torrents.keys(): torrents[day] = []
             torrent['timestamp'] = calendar.timegm(torrent['timestamp'].utctimetuple())
             del torrent['_id']
             torrents[day].append(torrent)
     return json.dumps(torrents)
 
-#with open('pull_torrents', 'w+') as f:
-#    f.write(pull_torrents(10, 0))
+with open('pull_torrents', 'w+') as f:
+    f.write(pull_torrents(4, 0))
