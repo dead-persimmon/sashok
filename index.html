@@ -69,7 +69,9 @@
 
     <div class='container-fluid'>
         <div class='row'>
-            <div class='col-md-6' ng-repeat='day in torrents'>
+            <div class='col-md-6'
+                ng-repeat='day in torrents'
+                ng-show='filteredDay.length > 0'>
             <div class="panel panel-default">
             <div class="panel-heading">Day &minus;{{$index}}</div>
                 <table class='table table-condensed table-hover'>
@@ -82,14 +84,14 @@
                                 <th>D</th>
                             </tr>
                         </thead>
-                        <tr ng-repeat='torrent in day | orderBy:sortField:sortReverse | filter:filterString | limitTo:torrentsPerDay'>
+                        <tr ng-repeat='torrent in filteredDay = (day | filter:filterString | orderBy:sortField:sortReverse | limitTo:torrentsPerDay)'>
                             <td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
                             <td>{{(torrent.seeders / 1000).toFixed(1)}}</td>
                             <td>{{(torrent.leechers / 1000).toFixed(1)}}</td>
                             <td>{{(torrent.downloads / 1000).toFixed(1)}}</td>
                         </tr>
                         <tr>
-                            <td colspan='4' ng-show='day.length > torrentsPerDay'><i>Showing {{torrentsPerDay}} out of {{day.length}} torrents.</i></td>
+                            <td colspan='4' ng-show='day.length > filteredDay.length'><i>Showing {{filteredDay.length}} out of {{day.length}} torrents.</i></td>
                         </tr>
                     </tbody>
                 </table>
