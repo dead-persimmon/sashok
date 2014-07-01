@@ -27,9 +27,6 @@ def pull_torrents(num_days = 2, offset = 0):
             torrent['timestamp'] = calendar.timegm(torrent['timestamp'].utctimetuple())
             del torrent['_id']
             torrents[day].append(torrent)
-
-    #for key in data.keys():
-    #    data[key].sort(key = lambda torrent: -int(torrent['downloads']))
     return json.dumps(torrents)
 
 #with open('pull_torrents', 'w+') as f:
