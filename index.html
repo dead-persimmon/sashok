@@ -14,13 +14,14 @@
         
             $scope.sortField = 'downloads';
             $scope.sortReverse = true;
-            $scope.torrentsPerDay = 20;
+            $scope.torrentsPerDay = 15;
             $scope.filterString = '';
         
             $scope.pullTorrents = function () {
                 request = ['pull_torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
                 $http.get(request).success(function (data) {
                     for (var prop in data) {
+                        console.log(prop);
                         $scope.torrents[prop] = data[prop];
                     }
                     $scope.currentOffset += $scope.daysPerRequest;
@@ -45,7 +46,7 @@
         <div class='container-fluid'>
             <form class='navbar-form navbar-left'>
                 <div class='input-group'>
-                    <div class='input-group-addon'>Max. torrents per day:</div>
+                    <div class='input-group-addon'>Torrents per day:</div>
                     <input type='text' class='form-control' ng-model='torrentsPerDay' value='{{torrentsPerDay}}' />
                 </div>
                 <div class='input-group'>
@@ -53,12 +54,16 @@
                     <input type='text' class='form-control' ng-model='filterString' value='{{filterString}}' />
                 </div>
             </form>
-            <p class='navbar-text'>Order by:</p>
+            <p class='navbar-text'>Order:</p>
             <div class="btn-group">
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "title"}' ng-click='sortField = "title"; sortReverse = !sortReverse'>Title</button>
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "seeders"}' ng-click='sortField = "seeders"; sortReverse = !sortReverse'>Seeders</button>
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "leechers"}' ng-click='sortField = "leechers"; sortReverse = !sortReverse'>Leechers</button>
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "downloads"}' ng-click='sortField = "downloads"; sortReverse = !sortReverse'>Downloads</button>
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "title"}' ng-click='sortField = "title"'>Title</button>
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "seeders"}' ng-click='sortField = "seeders"'>Seeders</button>
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "leechers"}' ng-click='sortField = "leechers"'>Leechers</button>
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "downloads"}' ng-click='sortField = "downloads"'>Downloads</button>
+            </div>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortReverse === false}' ng-click='sortReverse = false'>Asc</button>
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortReverse === true}' ng-click='sortReverse = true'>Desc</button>
             </div>            
         </div>
     </div>
