@@ -44,7 +44,7 @@ def nyaa_rss_parser(tree):
 			#timestamp = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S %z')
 			torrent_ts = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S +0000')
 			oldest_torrent_ts = min(oldest_torrent_ts, torrent_ts)
-			torrents.append({'_id': id, 'title': title, 'link': torrent_link, 'seeders': s, 'leechers': l, 'downloads': d, 'timestamp': torrent_ts})
+			torrents.append({'_id': id, 'title': title, 'link': torrent_link, 'seeders': int(s), 'leechers': int(l), 'downloads': int(d), 'timestamp': torrent_ts})
 		except Exception as exception:
 			log(exception)
 	return ts_now - oldest_torrent_ts
@@ -58,7 +58,7 @@ for site, site_parser in sites:
 		while True:
 			tree = ET.parse(open_url(site % page_offset))
 			oldest_torrent = site_parser(tree)
-			if oldest_torrent.days < 7: page_offset += 1
+			if oldest_torrent.days <= 14: page_offset += 1
 			else: break
 	except Exception as exception:
 		log(exception)

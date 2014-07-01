@@ -1,46 +1,93 @@
 ﻿<!doctype html>
 <html ng-app='_app'>
 <head>
-	<meta charset="utf-8">
-	<title>ATL</title>
-	<script src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js'></script>
+    <meta charset="utf-8">
+    <title>ATL</title>
+    <script src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js'></script>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
 </head>
 <body ng-controller='TorrentsController'>
-	<style>
-		* { font-family: Consolas; font-size: 8pt; text-decoration: none; color: #404040; }
-		a:visited { color: silver; }
-	</style>
+    <script>
+        var _app = angular.module('_app', []);
+        
+        _app.controller('TorrentsController', ['$scope', '$http', function ($scope, $http) {
+        
+            $scope.sortField = 'downloads';
+            $scope.sortReverse = true;
+            $scope.torrentsPerDay = 20;
+            $scope.filterString = '';
+        
+            $scope.pullTorrents = function () {
+                request = ['pull_torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
+                $http.get(request).success(function (data) {
+                    for (var prop in data) {
+                        $scope.torrents[prop] = data[prop];
+                    }
+                    $scope.currentOffset += $scope.daysPerRequest;
+                });
+            };
+            
+            $scope.daysPerRequest = 2;
+            $scope.currentOffset = 0;
+            
+            $scope.torrents = {};
+            $scope.pullTorrents();
+        }]);
+    </script>
 
-	<script>
-		var _app = angular.module('_app', []);
-		
-		console.log(_app);
-		
-		_app.controller('TorrentsController', ['$scope', '$http', function ($scope, $http) {
-			$http.get('pull_torrents').success(function (data) {
-				$scope.torrents = data;
-			});
-		}]);
-		
+    <style>
+        body { padding-top: 70px; padding-bottom: 15px; }
+    </style>
 
-	</script>
-	
-	<table width='100%' cellspacing='25'>
-		<tbody>
-			<tr>
-				<td valign='top' ng-repeat='day in torrents'>
-					<table width='100%'>
-						<tbody>
-							<tr ng-repeat='torrent in day'>
-								<td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
-								<td><b>{{(torrent.downloads / 1000).toFixed(1)}}</b>k</td>
-							</tr>
-						</tbody>
-					</table>
-				</td>
-			</tr>
-		</tbody>
-	</table>
+    <div class='navbar navbar-default navbar-fixed-top'>
+        <div class='container-fluid'>
+            <form class='navbar-form navbar-left'>
+                <div class='input-group'>
+                    <div class='input-group-addon'>Max. torrents per day:</div>
+                    <input type='text' class='form-control' ng-model='torrentsPerDay' value='{{torrentsPerDay}}' />
+                </div>
+                <div class='input-group'>
+                    <div class='input-group-addon'>Filter:</div>
+                    <input type='text' class='form-control' ng-model='filterString' value='{{filterString}}' />
+                </div>
+            </form>
+            <p class='navbar-text'>Order by:</p>
+            <div class="btn-group">
+                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "title"}' ng-click='sortField = "title"; sortReverse = !sortReverse'>Title</button>
+                <button type="button" class="btn btn-default navbar-btn">Seeders</button>
+                <button type="button" class="btn btn-default navbar-btn">Leechers</button>
+                <button type="button" class="btn btn-default navbar-btn">Downloads</button>
+            </div>            
+        </div>
+    </div>
 
+    <div class='container-fluid'>
+        <div class='row'>
+            <div class='col-md-6' ng-repeat='day in torrents'>
+                <h3>Day {{-$index}}</h3>
+                <table class='table table-condensed table-hover'>
+                    <tbody>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>S</th>
+                                <th>L</th>
+                                <th>D</th>
+                            </tr>
+                        </thead>
+                        <tr ng-repeat='torrent in day | orderBy:sortField:sortReverse | limitTo:torrentsPerDay | filter:filterString'>
+                            <td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
+                            <td>{{torrent.seeders | number}}</td>
+                            <td>{{torrent.leechers | number}}</td>
+                            <td>{{torrent.downloads | number}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class='col-md-12'>
+                <button class='btn btn-primary btn-lg btn-block' ng-click='pullTorrents()'>More...</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

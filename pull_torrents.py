@@ -1,32 +1,36 @@
 ﻿import debug
 
 if debug.local_run():
-	mongodb_url = 'mongodb://localhost:27017/'
+    mongodb_url = 'mongodb://localhost:27017/'
 else:
-	import os
-	mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
+    import os
+    mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
 
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import calendar
 import json
 
-def pull_torrents(num_days = 3):
-	ts_now = datetime.utcnow()
-	
-	data = dict()
-	
-	with MongoClient(mongodb_url) as client:
-		collection = client.sashok.torrents
-		for torrent in collection.find({'timestamp': {'$gte': (ts_now - timedelta(days = num_days))}}):
-			day = (ts_now - torrent['timestamp']).days
-			if not day in data.keys(): data[day] = []
-			unix_timestamp = calendar.timegm(torrent['timestamp'].utctimetuple())
-			data[day].append({'title': torrent['title'], 'link': torrent['link'], 'timestamp': unix_timestamp, 'seeders': torrent['seeders'], 'leechers': torrent['leechers'], 'downloads': torrent['downloads']})
+def pull_torrents(num_days = 2, offset = 0):
+    torrents = dict()
 
-	for key in data.keys():
-		data[key].sort(key = lambda torrent: -int(torrent['downloads']))
-	return json.dumps(data)
+    ts_now = datetime.utcnow()
+    
+    ts_ceil = ts_now - timedelta(days = num_days * offset)
+    ts_floor = ts_ceil - timedelta(days = num_days)
+    
+    with MongoClient(mongodb_url) as client:
+        collection = client.sashok.torrents
+        for torrent in collection.find({ '$and': [{ 'timestamp': { '$lte': ts_ceil } }, { 'timestamp': { '$gte': ts_floor } }] }):
+            day = (ts_now - torrent['timestamp']).days
+            if not day in torrents.keys(): torrents[day] = []
+            torrent['timestamp'] = calendar.timegm(torrent['timestamp'].utctimetuple())
+            del torrent['_id']
+            torrents[day].append(torrent)
 
-#with open('pull_torrents', 'a') as f:
-#	f.write(pull_torrents(3))
+    #for key in data.keys():
+    #    data[key].sort(key = lambda torrent: -int(torrent['downloads']))
+    return json.dumps(torrents)
+
+#with open('pull_torrents', 'w+') as f:
+#    f.write(pull_torrents(10, 0))
