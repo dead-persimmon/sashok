@@ -58,7 +58,7 @@ for site, site_parser in sites:
 		while True:
 			tree = ET.parse(open_url(site % page_offset))
 			oldest_torrent = site_parser(tree)
-			if oldest_torrent.days <= 14: page_offset += 1
+			if oldest_torrent.days <= 200: page_offset += 1
 			else: break
 	except Exception as exception:
 		log(exception)
