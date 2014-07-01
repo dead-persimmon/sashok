@@ -25,8 +25,8 @@ def pull_torrents(num_days = 2, offset = 0):
             day = (ts_now - torrent['timestamp']).days
             torrent['timestamp'] = calendar.timegm(torrent['timestamp'].utctimetuple())
             del torrent['_id']
-            torrents[num_days * offset - day].append(torrent)
+            torrents[day - num_days * offset].append(torrent)
     return json.dumps(torrents)
 
-#with open('pull_torrents', 'w+') as f:
-#    f.write(pull_torrents(4, 0))
+with open('pull_torrents', 'w+') as f:
+    f.write(pull_torrents(4, 0))
