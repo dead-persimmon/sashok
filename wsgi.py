@@ -21,6 +21,7 @@ def request_torrents(environment):
             from pull_torrents import pull_torrents
             return pull_torrents(int(query['num_days'][0]), int(query['offset'][0])).encode('utf-8')
         else:
+            # fix me
             return '{"0":[{"title":"Failed to pull torrents from the database, somehow."}]}'.encode('utf-8')
 
 def request_root(environment):
