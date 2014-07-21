@@ -69,4 +69,7 @@ with MongoClient(mongodb_url) as client:
 
 log('Collected %d items.' % len(torrents))
 
-del_file(lock_file_name)
+try:
+    del_file(lock_file_name)
+except Exception as exception:
+    log(exception)

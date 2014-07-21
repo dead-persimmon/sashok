@@ -1,26 +1,31 @@
 #!/usr/bin/env python
 
+import debug
 import html
 import os
 
-def request_env(environment):
-    lines = []
-    max_key_width = len(max(environment.keys(), key = lambda x: len(x)))
-    for key, value in sorted(environment.items()):
-        lines += [('{:>%d}   {}' % max_key_width).format(key, html.escape(str(value)))]
-    return '<html><body><pre>%s</pre></body></html>' % '\n'.join(lines)
+#def request_env(environment):
+#    lines = []
+#    max_key_width = len(max(environment.keys(), key = lambda x: len(x)))
+#    for key, value in sorted(environment.items()):
+#        lines += [('{:>%d}   {}' % max_key_width).format(key, html.escape(str(value)))]
+#    return '<html><body><pre>%s</pre></body></html>' % '\n'.join(lines)
 
 def request_torrents(environment):
-    import cgi
-    query = cgi.parse(None, environment)
-    if 'num_days' in query.keys() and 'offset' in query.keys():
-        from pull_torrents import pull_torrents
-        return pull_torrents(int(query['num_days'][0]), int(query['offset'][0])).encode('utf-8')
+    if debug.local_run():
+        return open('pull_torrents', 'rb').read()
     else:
-        return '{"0":[{"title":"Failed to pull torrents from the database, somehow."}]}'.encode('utf-8')
+        import cgi
+        query = cgi.parse(None, environment)
+        if 'num_days' in query.keys() and 'offset' in query.keys():
+            from pull_torrents import pull_torrents
+            return pull_torrents(int(query['num_days'][0]), int(query['offset'][0])).encode('utf-8')
+        else:
+            return '{"0":[{"title":"Failed to pull torrents from the database, somehow."}]}'.encode('utf-8')
 
 def request_root(environment):
-    return open(environment['OPENSHIFT_REPO_DIR'] + 'index.html', 'rb').read()
+    if debug.local_run(): return open('index.html', 'rb').read()
+    else: return open(environment['OPENSHIFT_REPO_DIR'] + 'index.html', 'rb').read()
 
 def application(environment, start_response):
     request_map = {'/': request_root, '/pull_torrents': request_torrents}
@@ -38,5 +43,5 @@ def application(environment, start_response):
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server
     httpd = make_server('localhost', 8051, application)
-    # Wait for a single request, serve it and quit.
-    httpd.handle_request()
+    for _ in range(2):
+        httpd.handle_request()

@@ -1,24 +1,41 @@
 ﻿<!doctype html>
-<html ng-app='_app'>
+<html lang='en' ng-app='_app'>
 <head>
-    <meta charset="utf-8">
-    <title>ATL</title>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
     <script src='http://ajax.googleapis.com/ajax/libs/angularjs/1.2.18/angular.min.js'></script>
     <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <title>ATL</title>
 </head>
-<body ng-controller='TorrentsController'>
+<body ng-controller='_controller'>
     <script>
         var _app = angular.module('_app', []);
+
+        _app.config(function ($httpProvider) {
+            $httpProvider.defaults.useXDomain = true;
+            delete $httpProvider.defaults.headers.common['X-Requested-With'];
+        });
         
-        _app.controller('TorrentsController', ['$scope', '$http', function ($scope, $http) {
-        
-            $scope.sortField = 'downloads';
-            $scope.sortReverse = true;
-            $scope.torrentsPerDay = 15;
-            $scope.filterString = '';
+        _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
+            $scope.settings = {
+                groupFilterString: '',
+                groupLimit: 10,
+
+                sortField: 'downloads',
+                sortReverse: true,
+
+                displayNumOfSeeders: true,
+                displayNumOfLeechers: false,
+                displayNumOfDownloads: true
+            };
+
+            $scope.daysPerRequest = 2;
+            $scope.currentOffset = 0;
             
-            $scope.filterTorrentTitle = function (torrent) {
-                var tokens = $scope.filterString;
+            $scope.days = [];
+            
+            $scope.filterGroupTitle = function (group) {
+                var tokens = $scope.settings.groupFilterString;
                 tokens = tokens.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
                 tokens = tokens.split(' ');
                 var regExp = [];
@@ -28,98 +45,125 @@
                 if (regExp.length > 0) {
                     regExp = '.*' + regExp.join('.*') + '.*';
                     regExp = RegExp(regExp, 'i');
-                    return regExp.test(torrent.title);
+                    return regExp.test(group.title);
                 } else {
                     return true;
                 }
             };
         
-            $scope.pullTorrents = function () {
-                request = ['pull_torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
-                $http.get(request).success(function (data) {
-                    $scope.torrents = $scope.torrents.concat(data);
-                    $scope.currentOffset += 1;
-                });
-            };
+            ($scope.pullTorrents = function () {
+                if (window.location.host == '') request = 'torrents.debug';
+                else request = ['pull_torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
+                $http.get(request)
+                    .success(function (data, status, headers, config) {
+                        $scope.days = $scope.days.concat(data);
+                        $scope.currentOffset += 1;
+                        //console.log($scope.days);
+                    })
+                    .error(function (data, status, headers, config) {
+                        console.log('Request failed.');
+                        console.log(arguments);
+                    });
+            })();
             
-            $scope.daysPerRequest = 2;
-            $scope.currentOffset = 0;
-            
-            $scope.torrents = [];
-            $scope.pullTorrents();
         }]);
     </script>
 
-    <style>
-        table td { font-family: 'Calibri'; font-size: 10pt; }
-        body { padding-top: 70px; padding-bottom: 15px; }
-        a { color: #303030; }
-        a:visited { color: silver; }
-    </style>
-
-    <div class='navbar navbar-default navbar-fixed-top'>
-        <div class='container-fluid'>
-            <div class="navbar-header"><a class="navbar-brand" href="/">Refresh</a></div>
-            <form class='navbar-form navbar-left'>
-                <div class='input-group'>
-                    <div class='input-group-addon'>Torrents per day</div>
-                    <input type='text' class='form-control' ng-model='torrentsPerDay' value='{{torrentsPerDay}}' />
-                </div>
-                <div class='input-group'>
-                    <div class='input-group-addon'>Filter</div>
-                    <input type='text' class='form-control' ng-model='filterString' value='{{filterString}}' />
-                </div>
-            </form>
-            <p class='navbar-text'>Order by</p>
-            <div class="btn-group">
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "title"}' ng-click='sortField = "title"'>Title</button>
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "seeders"}' ng-click='sortField = "seeders"'>Seeders</button>
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "leechers"}' ng-click='sortField = "leechers"'>Leechers</button>
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortField === "downloads"}' ng-click='sortField = "downloads"'>Downloads</button>
-            </div>
-            <div class="btn-group">
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortReverse === false}' ng-click='sortReverse = false'>Asc</button>
-                <button type="button" class="btn btn-default navbar-btn" ng-class='{"active":sortReverse === true}' ng-click='sortReverse = true'>Desc</button>
-            </div>            
-        </div>
-    </div>
+    <hr>
 
     <div class='container-fluid'>
         <div class='row'>
-            <div class='col-md-6'
-                ng-repeat='day in torrents'
-                ng-show='filteredDay.length > 0'>
-            <div class="panel panel-default">
-            <div class="panel-heading">
-                Day &minus;<b>{{$index}}</b>
-                <span class='pull-right' ng-show='day.length > filteredDay.length'><i>Showing {{filteredDay.length}} out of {{day.length}} torrents.</i></span>
+            <div class='col-md-6' ng-repeat='day in days' ng-show='filteredDay.length > 0'>
+                <div class='panel panel-default'>
+                    <div class='panel-heading'>
+                        Day &minus;{{$index}} <small class='pull-right'>Displaying {{filteredDay.length}} of {{day.length}} groups.</small>
+                    </div>
+                    <table class='table table-condensed'>
+                        <thead>
+                            <tr>
+                                <th>Group title</th>
+                                <th width='10%'>&nbsp;</th>
+                                <th width='10%' class='text-right' ng-show='settings.displayNumOfSeeders'>&Sigma; S</th>
+                                <th width='10%' class='text-right' ng-show='settings.displayNumOfLeechers'>&Sigma; L</th>
+                                <th width='10%' class='text-right' ng-show='settings.displayNumOfDownloads'>&Sigma; D</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                                <tr
+                                    ng-repeat-start='group in filteredDay = (day | filter:filterGroupTitle | orderBy:settings.sortField:settings.sortReverse | limitTo:settings.groupLimit)'
+                                    ng-init='filteredTorrents = (group.torrents | orderBy:settings.sortField:settings.sortReverse)'
+                                >
+                                    <td style='cursor: pointer;' ng-click='group.expanded = !group.expanded'>{{group.title}}</td>
+                                    <td>
+                                        <div class='btn-group'>
+                                            <a title='{{ {true: "Hide", false: "Show"}[!!group.expanded] }} all torrents of the group' ng-click='group.expanded = !group.expanded' class='btn btn-default btn-xs'><span class='glyphicon glyphicon-{{ {true: "minus-sign", false: "plus-sign"}[!!group.expanded] }}'></span></a>
+                                            <a title='Download first torrent of the group' class='btn btn-default btn-xs' href='{{filteredTorrents[0].link}}'><span class='glyphicon glyphicon-download'></span></a>
+                                            <a ng-disabled='true' title='Send first torrent of the group to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>
+                                        </div>
+                                    </td>
+                                    <td class='text-right' ng-show='settings.displayNumOfSeeders'>{{group.seeders | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumOfLeechers'>{{group.leechers | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumOfDownloads'>{{group.downloads | number}}</td>
+                                </tr>
+                                <tr ng-repeat-end ng-show='group.expanded' ng-repeat='torrent in filteredTorrents'>
+                                    <td>{{torrent.title}}</td>
+                                    <td>
+                                        <div class='btn-group'>
+                                            <a title='Download this torrent' class='btn btn-default btn-xs' href='{{torrent.link}}'><span class='glyphicon glyphicon-download'></span></a>
+                                            <a ng-disabled='true' title='Send this torrent to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>
+                                        </div>
+                                    </td>
+                                    <td class='text-right' ng-show='settings.displayNumOfSeeders'>{{torrent.seeders | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumOfLeechers'>{{torrent.leechers | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumOfDownloads'>{{torrent.downloads | number}}</td>
+                                </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>    
+        </div>         
+    </div>             
+
+    <div class='container-fluid'>
+        <button type='button' class='btn btn-primary btn-block btn-lg' ng-click='pullTorrents()'>More...</button>
+    </div>
+
+    <hr>
+
+    <div class='container-fluid'>
+        <div class='row'>
+            <div class='col-md-4'>
+                <form class='form-horizontal' role='form'>
+                    <div class='form-group'>
+                        <label class='control-label col-sm-3'>Group filter</label>
+                        <div class='col-sm-3'><input ng-model='settings.groupFilterString' type='text' class='form-control'></div>
+                        <div class='col-sm-6'><p class='help-block'>Space-separated terms to match against group title.</p></div>
+                    </div>
+                    <div class='form-group'>
+                        <label class='control-label col-sm-3'>Order groups by</label>
+                        <div class='col-sm-3'>
+                            <div class='radio'><label><input type='radio' name='orderByRadios' value='title' ng-model='settings.sortField'>Title</label></div>
+                            <div class='radio'><label><input type='radio' name='orderByRadios' value='seeders' ng-model='settings.sortField'>Seeders</label></div>
+                            <div class='radio'><label><input type='radio' name='orderByRadios' value='leechers' ng-model='settings.sortField'>Leechers</label></div>
+                            <div class='radio'><label><input type='radio' name='orderByRadios' value='downloads' ng-model='settings.sortField'>Downloads</label></div>
+                            <div class='checkbox'><label><input type='checkbox' ng-model='settings.sortReverse'>Descending</label></div>
+                        </div>
+                    </div>
+                    <div class='form-group'>
+                        <label class='control-label col-sm-3'>Group limit</label>
+                        <div class='col-sm-3'><input ng-model='settings.groupLimit' type='text' class='form-control'></div>
+                        <div class='col-sm-6'><p class='help-block'>Maximum number of groups to display in a single day.</p></div>
+                    </div>
+                </form>
             </div>
-                <table class='table table-condensed table-hover'>
-                    <!--
-                    <thead>
-                        <tr>
-                            <th>File</th>
-                            <th>S</th>
-                            <th>L</th>
-                            <th>D</th>
-                        </tr>
-                    </thead>
-                    -->
-                    <tbody>
-                        <tr ng-repeat='torrent in filteredDay = (day | filter:filterTorrentTitle | orderBy:sortField:sortReverse | limitTo:torrentsPerDay)'>
-                            <td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
-                            <td>{{(torrent.seeders / 1000).toFixed(1)}}</td>
-                            <td>{{(torrent.leechers / 1000).toFixed(1)}}</td>
-                            <td>{{(torrent.downloads / 1000).toFixed(1)}}</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class='col-md-4'>
+                <small>Placeholder.</small>
             </div>
-            </div>
-            <div class='col-md-12'>
-                <button class='btn btn-primary btn-lg btn-block' ng-click='pullTorrents()'>More...</button>
+            <div class='col-md-4'>
+                <small>Placeholder.</small>
             </div>
         </div>
     </div>
+    
 </body>
 </html>
