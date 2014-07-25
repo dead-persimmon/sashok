@@ -25,52 +25,56 @@ def log(message):
     with open(log_file_name, 'a') as log_file:
         log_file.write(str(message) + line_sep)
 
-log(line_sep + str(ts_now))
+def main():
+    log(line_sep + str(ts_now))
 
-if is_file(lock_file_name):
-    log('Already running. Probably.')
-    exit()
+    if is_file(lock_file_name):
+        log('Already running. Probably.')
+        exit()
 
-open(lock_file_name, 'a').close()
+    open(lock_file_name, 'a').close()
 
-import re
-def nyaa_rss_parser(tree):
-    oldest_torrent_ts = ts_now
-    for item in tree.findall('.//item'):
+    import re
+    def nyaa_rss_parser(tree):
+        oldest_torrent_ts = ts_now
+        for item in tree.findall('.//item'):
+            try:
+                title, category, torrent_link, details_link, meta_string, date_string = (child.text for child in item.getchildren())
+                s, l, d = re.match('^([0-9]+) seeder\(s\), ([0-9]+) leecher\(s\), ([0-9]+) download\(s\)', meta_string).groups()
+                id = ObjectID('{:0>24}'.format(hex(int(re.match('.*=([0-9]+)$', torrent_link).group(1)))[2:]))
+                #timestamp = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S %z')
+                torrent_ts = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S +0000')
+                oldest_torrent_ts = min(oldest_torrent_ts, torrent_ts)
+                torrents.append({'_id': id, 'title': title, 'link': torrent_link, 'seeders': int(s), 'leechers': int(l), 'downloads': int(d), 'timestamp': torrent_ts})
+            except Exception as exception:
+                log(exception)
+        return ts_now - oldest_torrent_ts
+
+    sites = [('http://www.nyaa.se/?page=rss&cats=1_37&filter=2&offset=%d', nyaa_rss_parser)]
+    torrents = []
+
+    for site, site_parser in sites:
         try:
-            title, category, torrent_link, details_link, meta_string, date_string = (child.text for child in item.getchildren())
-            s, l, d = re.match('^([0-9]+) seeder\(s\), ([0-9]+) leecher\(s\), ([0-9]+) download\(s\)', meta_string).groups()
-            id = ObjectID('{:0>24}'.format(hex(int(re.match('.*=([0-9]+)$', torrent_link).group(1)))[2:]))
-            #timestamp = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S %z')
-            torrent_ts = datetime.strptime(date_string, '%a, %d %b %Y %H:%M:%S +0000')
-            oldest_torrent_ts = min(oldest_torrent_ts, torrent_ts)
-            torrents.append({'_id': id, 'title': title, 'link': torrent_link, 'seeders': int(s), 'leechers': int(l), 'downloads': int(d), 'timestamp': torrent_ts})
+            page_offset = 1
+            while True:
+                tree = ET.parse(open_url(site % page_offset))
+                oldest_torrent = site_parser(tree)
+                if oldest_torrent.days <= 14: page_offset += 1
+                else: break
         except Exception as exception:
             log(exception)
-    return ts_now - oldest_torrent_ts
 
-sites = [('http://www.nyaa.se/?page=rss&cats=1_37&filter=2&offset=%d', nyaa_rss_parser)]
-torrents = []
+    with MongoClient(mongodb_url) as client:
+        collection = client.sashok.torrents
+        for torrent in torrents:
+            collection.save(torrent)
 
-for site, site_parser in sites:
+    log('Collected %d items.' % len(torrents))
+
     try:
-        page_offset = 1
-        while True:
-            tree = ET.parse(open_url(site % page_offset))
-            oldest_torrent = site_parser(tree)
-            if oldest_torrent.days <= 14: page_offset += 1
-            else: break
+        del_file(lock_file_name)
     except Exception as exception:
         log(exception)
 
-with MongoClient(mongodb_url) as client:
-    collection = client.sashok.torrents
-    for torrent in torrents:
-        collection.save(torrent)
-
-log('Collected %d items.' % len(torrents))
-
-try:
-    del_file(lock_file_name)
-except Exception as exception:
-    log(exception)
+if __name__ == '__main__':
+    main()
