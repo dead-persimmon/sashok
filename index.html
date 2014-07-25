@@ -81,8 +81,8 @@
                     <table class='table table-condensed'>
                         <thead>
                             <tr>
+                                <th width='10%'>&nbsp;</th>
                                 <th>Group title</th>
-                                <th width='15%'>&nbsp;</th>
                                 <th width='10%' class='text-right' ng-show='settings.displayNumOfSeeders'>&Sigma; S</th>
                                 <th width='10%' class='text-right' ng-show='settings.displayNumOfLeechers'>&Sigma; L</th>
                                 <th width='10%' class='text-right' ng-show='settings.displayNumOfDownloads'>&Sigma; D</th>
@@ -93,7 +93,6 @@
                                     ng-repeat-start='group in filteredDay = (day | filter:filterGroupTitle | orderBy:settings.sortField:settings.sortReverse | limitTo:settings.groupLimit)'
                                     ng-init='filteredTorrents = (group.torrents | orderBy:settings.sortField:settings.sortReverse)'
                                 >
-                                    <td style='cursor: pointer;' ng-click='group.expanded = !group.expanded'>{{group.title}}</td>
                                     <td>
                                         <div class='btn-group'>
                                             <a title='{{ {true: "Hide", false: "Show"}[!!group.expanded] }} all torrents of the group' ng-click='group.expanded = !group.expanded' class='btn btn-default btn-xs'><span class='glyphicon glyphicon-{{ {true: "minus-sign", false: "plus-sign"}[!!group.expanded] }}'></span></a>
@@ -101,18 +100,19 @@
                                             <a ng-disabled='true' title='Send first torrent of the group to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>
                                         </div>
                                     </td>
+                                    <td style='cursor: pointer;' ng-click='group.expanded = !group.expanded'>{{group.title}}</td>
                                     <td class='text-right' ng-show='settings.displayNumOfSeeders'>{{group.seeders | number}}</td>
                                     <td class='text-right' ng-show='settings.displayNumOfLeechers'>{{group.leechers | number}}</td>
                                     <td class='text-right' ng-show='settings.displayNumOfDownloads'>{{group.downloads | number}}</td>
                                 </tr>
                                 <tr ng-repeat-end ng-show='group.expanded' ng-repeat='torrent in filteredTorrents'>
-                                    <td>{{torrent.title}}</td>
                                     <td>
                                         <div class='btn-group'>
                                             <a title='Download this torrent' class='btn btn-default btn-xs' href='{{torrent.link}}'><span class='glyphicon glyphicon-download'></span></a>
                                             <a ng-disabled='true' title='Send this torrent to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>
                                         </div>
                                     </td>
+                                    <td>{{torrent.title}}</td>
                                     <td class='text-right' ng-show='settings.displayNumOfSeeders'>{{torrent.seeders | number}}</td>
                                     <td class='text-right' ng-show='settings.displayNumOfLeechers'>{{torrent.leechers | number}}</td>
                                     <td class='text-right' ng-show='settings.displayNumOfDownloads'>{{torrent.downloads | number}}</td>
@@ -147,6 +147,9 @@
                             <div class='radio'><label><input type='radio' name='orderByRadios' value='leechers' ng-model='settings.sortField'>Leechers</label></div>
                             <div class='radio'><label><input type='radio' name='orderByRadios' value='downloads' ng-model='settings.sortField'>Downloads</label></div>
                             <div class='checkbox'><label><input type='checkbox' ng-model='settings.sortReverse'>Descending</label></div>
+                        </div>
+                        <div class='col-sm-6'>
+                            <p class='help-block'>Placeholder.</p>
                         </div>
                     </div>
                     <div class='form-group'>
