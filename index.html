@@ -17,6 +17,11 @@
         });
         
         _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
+            $scope.strings = {
+                groupfilterStringHelp: 'Space-separated terms to match against group title.',
+                groupDisplayLimitHelp: 'Maximum number of groups to display in a single day.',
+            };
+            
             $scope.settings = {
                 groupFilterString: '',
                 groupLimit: 10,
@@ -26,9 +31,9 @@
 
                 displayNumOfSeeders: true,
                 displayNumOfLeechers: false,
-                displayNumOfDownloads: true
+                displayNumOfDownloads: true,
             };
-
+            
             $scope.daysPerRequest = 2;
             $scope.currentOffset = 0;
             
@@ -97,7 +102,7 @@
                                         <div class='btn-group'>
                                             <a title='{{ {true: "Hide", false: "Show"}[!!group.expanded] }} all torrents of the group' ng-click='group.expanded = !group.expanded' class='btn btn-default btn-xs'><span class='glyphicon glyphicon-{{ {true: "minus-sign", false: "plus-sign"}[!!group.expanded] }}'></span></a>
                                             <a title='Download first torrent of the group' class='btn btn-default btn-xs' href='{{filteredTorrents[0].link}}'><span class='glyphicon glyphicon-download'></span></a>
-                                            <a ng-disabled='true' title='Send first torrent of the group to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>
+                                            <!--<a ng-disabled='true' title='Send first torrent of the group to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>-->
                                         </div>
                                     </td>
                                     <td style='cursor: pointer;' ng-click='group.expanded = !group.expanded'>{{group.title}}</td>
@@ -109,7 +114,7 @@
                                     <td>
                                         <div class='btn-group'>
                                             <a title='Download this torrent' class='btn btn-default btn-xs' href='{{torrent.link}}'><span class='glyphicon glyphicon-download'></span></a>
-                                            <a ng-disabled='true' title='Send this torrent to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>
+                                            <!--<a ng-disabled='true' title='Send this torrent to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>-->
                                         </div>
                                     </td>
                                     <td>{{torrent.title}}</td>
@@ -137,25 +142,26 @@
                     <div class='form-group'>
                         <label class='control-label col-sm-3'>Group filter</label>
                         <div class='col-sm-3'><input ng-model='settings.groupFilterString' type='text' class='form-control'></div>
-                        <div class='col-sm-6'><p class='help-block'>Space-separated terms to match against group title.</p></div>
+                        <div class='col-sm-6'><p class='help-block'>{{strings.groupfilterStringHelp}}</p></div>
                     </div>
                     <div class='form-group'>
                         <label class='control-label col-sm-3'>Order groups by</label>
                         <div class='col-sm-3'>
-                            <div class='radio'><label><input type='radio' name='orderByRadios' value='title' ng-model='settings.sortField'>Title</label></div>
-                            <div class='radio'><label><input type='radio' name='orderByRadios' value='seeders' ng-model='settings.sortField'>Seeders</label></div>
-                            <div class='radio'><label><input type='radio' name='orderByRadios' value='leechers' ng-model='settings.sortField'>Leechers</label></div>
-                            <div class='radio'><label><input type='radio' name='orderByRadios' value='downloads' ng-model='settings.sortField'>Downloads</label></div>
-                            <div class='checkbox'><label><input type='checkbox' ng-model='settings.sortReverse'>Descending</label></div>
+                            <select class='form-control' ng-model='settings.sortField'>
+                                <option value='title'>Title</option>
+                                <option value='seeders'>Seeders</option>
+                                <option value='leechers'>Leechers</option>
+                                <option value='downloads'>Downloads</option>
+                            </select>
                         </div>
                         <div class='col-sm-6'>
-                            <p class='help-block'>Placeholder.</p>
+                            <div class='checkbox'><label><input type='checkbox' ng-model='settings.sortReverse'>Descending</label></div>
                         </div>
                     </div>
                     <div class='form-group'>
                         <label class='control-label col-sm-3'>Group limit</label>
                         <div class='col-sm-3'><input ng-model='settings.groupLimit' type='text' class='form-control'></div>
-                        <div class='col-sm-6'><p class='help-block'>Maximum number of groups to display in a single day.</p></div>
+                        <div class='col-sm-6'><p class='help-block'>{{strings.groupDisplayLimitHelp}}</p></div>
                     </div>
                 </form>
             </div>
