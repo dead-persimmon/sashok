@@ -1,8 +1,6 @@
-import sys, logging
+import os, sys, logging
 import time
 from datetime import datetime
-from os.path import isfile as is_file
-from os import remove as del_file
 from urllib.request import urlopen as open_url
 import xml.etree.ElementTree as ET
 from pymongo import MongoClient
@@ -28,11 +26,13 @@ def main():
 
     log.info('Starting at %s', ts_now)
 
-    if is_file(lock_file_name):
+    try:
+        lockfile = open(lock_file_name, 'w')
+    except IOError:
         log.critical('Already running. Probably.')
         sys.exit(1)
-
-    open(lock_file_name, 'a').close()
+    else;
+        lockfile.close()
 
     import re
     def nyaa_rss_parser(tree):
@@ -72,8 +72,8 @@ def main():
     log.info('Collected %d items.', len(torrents))
 
     try:
-        del_file(lock_file_name)
-    except Exception as exception:
+        os.remove(lock_file_name)
+    except IOError:
         log.exception('Failed to remove lockfile')
 
 if __name__ == '__main__':
