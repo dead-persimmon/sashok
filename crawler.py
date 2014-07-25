@@ -1,4 +1,4 @@
-﻿import time
+import time
 from datetime import datetime
 from os.path import isfile as is_file
 from os import remove as del_file, linesep as line_sep
