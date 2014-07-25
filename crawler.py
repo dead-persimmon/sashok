@@ -1,7 +1,8 @@
+import sys, logging
 import time
 from datetime import datetime
 from os.path import isfile as is_file
-from os import remove as del_file, linesep as line_sep
+from os import remove as del_file
 from urllib.request import urlopen as open_url
 import xml.etree.ElementTree as ET
 from pymongo import MongoClient
@@ -21,16 +22,15 @@ else:
 
 ts_now = datetime.utcnow()
 
-def log(message):
-    with open(log_file_name, 'a') as log_file:
-        log_file.write(str(message) + line_sep)
-
 def main():
-    log(line_sep + str(ts_now))
+    logging.basicConfig(filename=log_file_name, level=logging.DEBUG)
+    log = logging.getLogger('crawler')
+
+    log.info('Starting at %s', ts_now)
 
     if is_file(lock_file_name):
-        log('Already running. Probably.')
-        exit()
+        log.critical('Already running. Probably.')
+        sys.exit(1)
 
     open(lock_file_name, 'a').close()
 
@@ -47,7 +47,7 @@ def main():
                 oldest_torrent_ts = min(oldest_torrent_ts, torrent_ts)
                 torrents.append({'_id': id, 'title': title, 'link': torrent_link, 'seeders': int(s), 'leechers': int(l), 'downloads': int(d), 'timestamp': torrent_ts})
             except Exception as exception:
-                log(exception)
+                log.exception('Parsing torrent')
         return ts_now - oldest_torrent_ts
 
     sites = [('http://www.nyaa.se/?page=rss&cats=1_37&filter=2&offset=%d', nyaa_rss_parser)]
@@ -62,19 +62,19 @@ def main():
                 if oldest_torrent.days <= 14: page_offset += 1
                 else: break
         except Exception as exception:
-            log(exception)
+            log.exception('Parsing url %s', site % page_offset)
 
     with MongoClient(mongodb_url) as client:
         collection = client.sashok.torrents
         for torrent in torrents:
             collection.save(torrent)
 
-    log('Collected %d items.' % len(torrents))
+    log.info('Collected %d items.', len(torrents))
 
     try:
         del_file(lock_file_name)
     except Exception as exception:
-        log(exception)
+        log.exception('Failed to remove lockfile')
 
 if __name__ == '__main__':
     main()
