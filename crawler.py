@@ -31,7 +31,7 @@ def main():
     except IOError:
         log.critical('Already running. Probably.')
         sys.exit(1)
-    else;
+    else:
         lockfile.close()
 
     import re
