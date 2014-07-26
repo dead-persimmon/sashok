@@ -9,35 +9,53 @@
 </head>
 <body ng-controller='_controller'>
     <script>
+        var debug;
+    
         var _app = angular.module('_app', []);
 
         _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
         
             $scope.strings = {
-                groupDisplayLimitHelp: 'Maximum number of groups to display in a single day.',
+                displayNumGroupsPerDayHelp: 'Maximum number of groups to display in a single day.',
             };
-            
+
+            function CustomBooleanIn(value) { return !!value ? '1' : '0'; }
+            function CustomBooleanOut(value) { return !!Number(value); }
+
             $scope.settings = {
-                groupDisplayLimit: 10,
-
-                sortField: 'downloads',
-                sortReverse: true,
-
-                displayNumSeeders: false,
-                displayNumLeechers: false,
-                displayNumDownloads: true,
+                defaultValues: [
+                    { name: 'orderByField', defaultValue: 'downloads', castIn: String, castOut: String },
+                    { name: 'orderDescending', defaultValue: true, castIn: CustomBooleanIn, castOut: CustomBooleanOut },
+                    { name: 'displayNumSeeders', defaultValue: false, castIn: CustomBooleanIn, castOut: CustomBooleanOut },
+                    { name: 'displayNumLeechers', defaultValue: false, castIn: CustomBooleanIn, castOut: CustomBooleanOut },
+                    { name: 'displayNumDownloads', defaultValue: true, castIn: CustomBooleanIn, castOut: CustomBooleanOut },
+                    { name: 'displayNumGroupsPerDay', defaultValue: 15, castIn: String, castOut: Number },
+                    { name: 'downloadDaysPerRequest', defaultValue: 2, castIn: String, castOut: Number },
+                ]
             };
-            
-            $scope.daysPerRequest = 2;
-            $scope.currentOffset = 0;
-            
+
+            for (var index = 0; index < $scope.settings.defaultValues.length; index += 1) {
+                var property = $scope.settings.defaultValues[index];
+                $scope.settings.__defineGetter__(property.name, (function (property) {
+                    return function () {
+                        if (localStorage.getItem(property.name) != null)
+                            return property.castOut(localStorage.getItem(property.name));
+                        else return property.defaultValue;
+                    }
+                })(property));
+                $scope.settings.__defineSetter__(property.name, (function (property) {
+                    return function (value) { localStorage.setItem(property.name, property.castIn(value)); }
+                })(property));
+            }
+
             $scope.days = [];
+            var daysOffset = 0;
             
             ($scope.pullTorrents = function () {
-                $http.get(['torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join(''))
+                $http.get(['torrents?num_days=', $scope.settings.downloadDaysPerRequest, '&offset=', daysOffset].join(''))
                     .success(function (data, status, headers, config) {
                         $scope.days = $scope.days.concat(data);
-                        $scope.currentOffset += 1;
+                        daysOffset += 1;
                     })
                     .error(function (data, status, headers, config) {
                         console.log('Request failed.');
@@ -60,9 +78,9 @@
     <div class='container-fluid'>
         <div class='row'>
             <div class='col-md-6' ng-repeat='day in days' ng-show='filteredDay.length > 0'>
+                <a name='day-{{$index}}'></a>
                 <div class='panel panel-default'>
                     <div class='panel-heading'>
-                        <a name='day-{{$index}}'></a>
                         Day &minus;{{$index}}
                             <em class='pull-right'>
                                 Displaying {{filteredDay.length}} of {{day.length}} groups.
@@ -81,8 +99,8 @@
                         </thead>
                         <tbody>
                                 <tr
-                                    ng-repeat-start='group in filteredDay = (day | orderBy:settings.sortField:settings.sortReverse | limitTo:(day.limit || settings.groupDisplayLimit))'
-                                    ng-init='filteredTorrents = (group.torrents | orderBy:settings.sortField:settings.sortReverse)'
+                                    ng-repeat-start='group in filteredDay = (day | orderBy:settings.orderByField:settings.orderDescending | limitTo:(day.limit || settings.displayNumGroupsPerDay))'
+                                    ng-init='filteredTorrents = (group.torrents | orderBy:settings.orderByField:settings.orderDescending)'
                                 >
                                     <td>
                                         <span
@@ -124,7 +142,7 @@
                     <div class='form-group'>
                         <label class='control-label col-sm-3'>Order groups by</label>
                         <div class='col-sm-3'>
-                            <select class='form-control' ng-model='settings.sortField'>
+                            <select class='form-control' ng-model='settings.orderByField'>
                                 <option value='title'>Title</option>
                                 <option value='seeders'>Seeders</option>
                                 <option value='leechers'>Leechers</option>
@@ -132,13 +150,13 @@
                             </select>
                         </div>
                         <div class='col-sm-6'>
-                            <div class='checkbox'><label><input type='checkbox' ng-model='settings.sortReverse'>Descending</label></div>
+                            <div class='checkbox'><label><input type='checkbox' ng-model='settings.orderDescending'>Descending</label></div>
                         </div>
                     </div>
                     <div class='form-group'>
                         <label class='control-label col-sm-3'>Group limit</label>
-                        <div class='col-sm-3'><input ng-model='settings.groupDisplayLimit' type='text' class='form-control'></div>
-                        <div class='col-sm-6'><p class='help-block'>{{strings.groupDisplayLimitHelp}}</p></div>
+                        <div class='col-sm-3'><input ng-model='settings.displayNumGroupsPerDay' type='text' class='form-control'></div>
+                        <div class='col-sm-6'><p class='help-block'>{{strings.displayNumGroupsPerDayHelp}}</p></div>
                     </div>
                 </form>
             </div>
