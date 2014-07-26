@@ -11,27 +11,21 @@
     <script>
         var _app = angular.module('_app', []);
 
-        _app.config(function ($httpProvider) {
-            $httpProvider.defaults.useXDomain = true;
-            delete $httpProvider.defaults.headers.common['X-Requested-With'];
-        });
-        
         _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
+        
             $scope.strings = {
-                groupfilterStringHelp: 'Space-separated terms to match against group title.',
                 groupDisplayLimitHelp: 'Maximum number of groups to display in a single day.',
             };
             
             $scope.settings = {
-                groupFilterString: '',
-                groupLimit: 10,
+                groupDisplayLimit: 10,
 
                 sortField: 'downloads',
                 sortReverse: true,
 
-                displayNumOfSeeders: true,
-                displayNumOfLeechers: false,
-                displayNumOfDownloads: true,
+                displayNumSeeders: false,
+                displayNumLeechers: false,
+                displayNumDownloads: true,
             };
             
             $scope.daysPerRequest = 2;
@@ -39,27 +33,8 @@
             
             $scope.days = [];
             
-            $scope.filterGroupTitle = function (group) {
-                var tokens = $scope.settings.groupFilterString;
-                tokens = tokens.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
-                tokens = tokens.split(' ');
-                var regExp = [];
-                for (var i = 0; i < tokens.length; i += 1) {
-                    if (tokens[i]) regExp.push('(' + tokens[i] + ')');
-                }
-                if (regExp.length > 0) {
-                    regExp = '.*' + regExp.join('.*') + '.*';
-                    regExp = RegExp(regExp, 'i');
-                    return regExp.test(group.title);
-                } else {
-                    return true;
-                }
-            };
-        
             ($scope.pullTorrents = function () {
-                /* if (window.location.host == '') request = 'torrents.debug';
-                else */ request = ['torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
-                $http.get(request)
+                $http.get(['torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join(''))
                     .success(function (data, status, headers, config) {
                         $scope.days = $scope.days.concat(data);
                         $scope.currentOffset += 1;
@@ -73,6 +48,13 @@
         }]);
     </script>
 
+    <style>
+        td a { color: #333; }
+        td a:visited { color: #999; }
+        tr.small { font-size: 75%; }
+        .clickableGlyph { cursor: pointer; }
+    </style>
+
     <hr>
 
     <div class='container-fluid'>
@@ -80,46 +62,46 @@
             <div class='col-md-6' ng-repeat='day in days' ng-show='filteredDay.length > 0'>
                 <div class='panel panel-default'>
                     <div class='panel-heading'>
-                        Day &minus;{{$index}} <small class='pull-right'>Displaying {{filteredDay.length}} of {{day.length}} groups.</small>
+                        Day &minus;{{$index}}
+                            <em class='pull-right'>
+                                Displaying {{filteredDay.length}} of {{day.length}} groups.
+                                <a ng-show='filteredDay.length < day.length' ng-click='day.limit = day.length' href='#'>Show everything?</a>
+                            </em>
                     </div>
                     <table class='table table-condensed'>
                         <thead>
                             <tr>
-                                <th width='10%'>&nbsp;</th>
-                                <th>Group title</th>
-                                <th width='10%' class='text-right' ng-show='settings.displayNumOfSeeders'>&Sigma; S</th>
-                                <th width='10%' class='text-right' ng-show='settings.displayNumOfLeechers'>&Sigma; L</th>
-                                <th width='10%' class='text-right' ng-show='settings.displayNumOfDownloads'>&Sigma; D</th>
+                                <th width='1%'>&nbsp;</th>
+                                <th>Groups</th>
+                                <th width='10%' class='text-right' ng-show='settings.displayNumSeeders'>&Sigma;S</th>
+                                <th width='10%' class='text-right' ng-show='settings.displayNumLeechers'>&Sigma;L</th>
+                                <th width='10%' class='text-right' ng-show='settings.displayNumDownloads'>&Sigma;D</th>
                             </tr>
                         </thead>
                         <tbody>
                                 <tr
-                                    ng-repeat-start='group in filteredDay = (day | filter:filterGroupTitle | orderBy:settings.sortField:settings.sortReverse | limitTo:settings.groupLimit)'
+                                    ng-repeat-start='group in filteredDay = (day | orderBy:settings.sortField:settings.sortReverse | limitTo:(day.limit || settings.groupDisplayLimit))'
                                     ng-init='filteredTorrents = (group.torrents | orderBy:settings.sortField:settings.sortReverse)'
                                 >
                                     <td>
-                                        <div class='btn-group'>
-                                            <a title='{{ {true: "Hide", false: "Show"}[!!group.expanded] }} all torrents of the group' ng-click='group.expanded = !group.expanded' class='btn btn-default btn-xs'><span class='glyphicon glyphicon-{{ {true: "minus-sign", false: "plus-sign"}[!!group.expanded] }}'></span></a>
-                                            <a title='Download first torrent of the group' class='btn btn-default btn-xs' href='{{filteredTorrents[0].link}}'><span class='glyphicon glyphicon-download'></span></a>
-                                            <!--<a ng-disabled='true' title='Send first torrent of the group to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>-->
-                                        </div>
+                                        <span
+                                            ng-click='group.expanded = !group.expanded'
+                                            class='glyphicon glyphicon-{{ {true: "minus-sign", false: "plus-sign"}[!!group.expanded] }} clickableGlyph'>
+                                        </span>
                                     </td>
-                                    <td style='cursor: pointer;' ng-click='group.expanded = !group.expanded'>{{group.title}}</td>
-                                    <td class='text-right' ng-show='settings.displayNumOfSeeders'>{{group.seeders | number}}</td>
-                                    <td class='text-right' ng-show='settings.displayNumOfLeechers'>{{group.leechers | number}}</td>
-                                    <td class='text-right' ng-show='settings.displayNumOfDownloads'>{{group.downloads | number}}</td>
-                                </tr>
-                                <tr ng-repeat-end ng-show='group.expanded' ng-repeat='torrent in filteredTorrents'>
                                     <td>
-                                        <div class='btn-group'>
-                                            <a title='Download this torrent' class='btn btn-default btn-xs' href='{{torrent.link}}'><span class='glyphicon glyphicon-download'></span></a>
-                                            <!--<a ng-disabled='true' title='Send this torrent to &mu;Torrent' class='btn btn-default btn-xs'><strong>&mu;T</strong></a>-->
-                                        </div>
+                                        <a href='{{filteredTorrents[0].link}}'>{{group.title}}<strong ng-show='group.episode'> Ep. {{group.episode}}</strong></a>
                                     </td>
-                                    <td>{{torrent.title}}</td>
-                                    <td class='text-right' ng-show='settings.displayNumOfSeeders'>{{torrent.seeders | number}}</td>
-                                    <td class='text-right' ng-show='settings.displayNumOfLeechers'>{{torrent.leechers | number}}</td>
-                                    <td class='text-right' ng-show='settings.displayNumOfDownloads'>{{torrent.downloads | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumSeeders'>{{group.seeders | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumLeechers'>{{group.leechers | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumDownloads'>{{group.downloads | number}}</td>
+                                </tr>
+                                <tr class='small' ng-repeat-end ng-show='group.expanded' ng-repeat='torrent in filteredTorrents'>
+                                    <td>&nbsp;</td>
+                                    <td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
+                                    <td class='text-right' ng-show='settings.displayNumSeeders'>{{torrent.seeders | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumLeechers'>{{torrent.leechers | number}}</td>
+                                    <td class='text-right' ng-show='settings.displayNumDownloads'>{{torrent.downloads | number}}</td>
                                 </tr>
                         </tbody>
                     </table>
@@ -139,11 +121,6 @@
             <div class='col-md-4'>
                 <form class='form-horizontal' role='form'>
                     <div class='form-group'>
-                        <label class='control-label col-sm-3'>Group filter</label>
-                        <div class='col-sm-3'><input ng-model='settings.groupFilterString' type='text' class='form-control'></div>
-                        <div class='col-sm-6'><p class='help-block'>{{strings.groupfilterStringHelp}}</p></div>
-                    </div>
-                    <div class='form-group'>
                         <label class='control-label col-sm-3'>Order groups by</label>
                         <div class='col-sm-3'>
                             <select class='form-control' ng-model='settings.sortField'>
@@ -159,16 +136,25 @@
                     </div>
                     <div class='form-group'>
                         <label class='control-label col-sm-3'>Group limit</label>
-                        <div class='col-sm-3'><input ng-model='settings.groupLimit' type='text' class='form-control'></div>
+                        <div class='col-sm-3'><input ng-model='settings.groupDisplayLimit' type='text' class='form-control'></div>
                         <div class='col-sm-6'><p class='help-block'>{{strings.groupDisplayLimitHelp}}</p></div>
                     </div>
                 </form>
             </div>
             <div class='col-md-4'>
-                <small>Placeholder.</small>
+                <form class='form-horizontal' role='form'>
+                    <div class='form-group'>
+                        <label class='control-label col-sm-3'>Display fields</label>
+                        <div class='col-sm-6'>
+                            <div class='checkbox'><label><input type='checkbox' ng-model='settings.displayNumSeeders'>Seeders</label></div>
+                            <div class='checkbox'><label><input type='checkbox' ng-model='settings.displayNumLeechers'>Leechers</label></div>
+                            <div class='checkbox'><label><input type='checkbox' ng-model='settings.displayNumDownloads'>Downloads</label></div>
+                        </div>
+                    </div>
+                </form>
             </div>
             <div class='col-md-4'>
-                <small>Placeholder.</small>
+                &nbsp;
             </div>
         </div>
     </div>

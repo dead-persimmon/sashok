@@ -16,7 +16,10 @@ def build_normalize_title():
     re_extensions = re.compile('|'.join(esc('.') + ext + '$' for ext in ('avi', 'mkv', 'mp4')), re.I)
     re_tags = re.compile('|'.join(esc(br[0]) + '[^' + esc(br[1]) + ']*' + esc(br[1]) for br in ('[]', '()', '{}')))
     re_spaces_greedy = re.compile('\s+')
-    re_episode_number_variants = [re.compile('(?: - )([0-9]+)(?:v[0-9]+)? '), re.compile(' e([0-9]+)(?:v[0-9]+)? ', re.I)]
+    
+    re_episode_number_variants = [re.compile('(?: - )([0-9]+)(?:v[0-9]+)? '), re.compile(' ep?([0-9]+)(?:v[0-9]+)? ', re.I)]
+    re_volume_number_variants = [re.compile('\s*-?\s*vol\.?\s*([0-9]+)', re.I)]
+    
     re_solo_hyphens = re.compile(' -+ ')
     re_multiple_bangs = re.compile('!+')
     re_greedy_numbers = re.compile('[0-9]+')
@@ -40,8 +43,11 @@ def build_normalize_title():
             if result:
                 episode_number, = result.groups()
                 episode_number = int(episode_number)
-                title = re_episode_number.sub(' — \\1 ', title)
+                title = re_episode_number.sub(' ', title)
                 break
+        
+        for re_volume_number in re_volume_number_variants:
+            title = re_volume_number.sub(' Vol. \\1', title)
         
         title = re_solo_hyphens.sub(' — ', title)
         title = re_multiple_bangs.sub('!', title)
@@ -63,27 +69,32 @@ def torrents(num_days = 2, offset = 0):
     with MongoClient(mongodb_url) as client:
         collection = client.sashok.torrents
         for torrent in collection.find({ '$and': [{ 'timestamp': { '$lte': ts_ceil } }, { 'timestamp': { '$gte': ts_floor } }] }):
-            del torrent['_id']
-            day_id = (ts_now - torrent['timestamp']).days - num_days * offset
-            torrent['timestamp'] = calendar.timegm(torrent['timestamp'].utctimetuple())
-
-            day = days[day_id]
-
+            day = days[(ts_now - torrent['timestamp']).days - num_days * offset]
+            
+            #torrent['timestamp'] = calendar.timegm(torrent['timestamp'].utctimetuple())
+            
             group_title, episode_number = normalize_title(torrent['title'])
-            if group_title not in day:
-                day[group_title] = { 'torrents': [], 'seeders': 0, 'leechers': 0, 'downloads': 0 }
+            group_id = group_title + ' EP:' + str(episode_number) if episode_number else group_title
+            
+            if group_id not in day:
+                day[group_id] = { 'title': group_title, 'torrents': [], 'seeders': 0, 'leechers': 0, 'downloads': 0 }
 
-            day[group_title]['episode'] = episode_number
-            day[group_title]['torrents'].append(torrent)
-            day[group_title]['seeders'] += int(torrent['seeders'])
-            day[group_title]['leechers'] += int(torrent['leechers'])
-            day[group_title]['downloads'] += int(torrent['downloads'])
+            day[group_id]['episode'] = episode_number
+            day[group_id]['torrents'].append(torrent)
+            day[group_id]['seeders'] += int(torrent['seeders'])
+            day[group_id]['leechers'] += int(torrent['leechers'])
+            day[group_id]['downloads'] += int(torrent['downloads'])
+            
+            del torrent['_id']
+            del torrent['timestamp']
 
     for index, day in enumerate(days):
         groups = []
-        for group_title in day.keys():
-            groups.append(dict(day[group_title], **{ 'title': group_title }))
+        for group_id in day.keys():
+            groups.append(dict(day[group_id], **{ 'group_id': group_id }))
         days[index] = groups
 
-    if debug.local_run(): return json.dumps(days, indent = 2)
-    else: return json.dumps(days)
+    return json.dumps(days, indent = 2)
+ 
+if __name__ == '__main__':
+    print(torrents(1))
