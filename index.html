@@ -9,8 +9,6 @@
 </head>
 <body ng-controller='_controller'>
     <script>
-        var debug;
-    
         var _app = angular.module('_app', []);
 
         _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
@@ -38,8 +36,8 @@
                 var property = $scope.settings.defaultValues[index];
                 $scope.settings.__defineGetter__(property.name, (function (property) {
                     return function () {
-                        if (localStorage.getItem(property.name) != null)
-                            return property.castOut(localStorage.getItem(property.name));
+                        var value = localStorage.getItem(property.name);
+                        if (value != null) return property.castOut(localStorage.getItem(property.name));
                         else return property.defaultValue;
                     }
                 })(property));
