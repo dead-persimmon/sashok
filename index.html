@@ -62,10 +62,11 @@
             <div class='col-md-6' ng-repeat='day in days' ng-show='filteredDay.length > 0'>
                 <div class='panel panel-default'>
                     <div class='panel-heading'>
+                        <a name='day-{{$index}}'></a>
                         Day &minus;{{$index}}
                             <em class='pull-right'>
                                 Displaying {{filteredDay.length}} of {{day.length}} groups.
-                                <a ng-show='filteredDay.length < day.length' ng-click='day.limit = day.length' href='#'>Show everything?</a>
+                                <a ng-show='filteredDay.length < day.length' ng-click='day.limit = day.length' href='#day-{{$index}}'>Show everything?</a>
                             </em>
                     </div>
                     <table class='table table-condensed'>
