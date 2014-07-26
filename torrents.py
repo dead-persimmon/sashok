@@ -1,4 +1,4 @@
-﻿import debug
+import debug
 
 if debug.local_run():
     mongodb_url = 'mongodb://localhost:27017/'
