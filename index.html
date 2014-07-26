@@ -57,13 +57,12 @@
             };
         
             ($scope.pullTorrents = function () {
-                if (window.location.host == '') request = 'torrents.debug';
-                else request = ['torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
+                /* if (window.location.host == '') request = 'torrents.debug';
+                else */ request = ['torrents?num_days=', $scope.daysPerRequest, '&offset=', $scope.currentOffset].join('');
                 $http.get(request)
                     .success(function (data, status, headers, config) {
                         $scope.days = $scope.days.concat(data);
                         $scope.currentOffset += 1;
-                        //console.log($scope.days);
                     })
                     .error(function (data, status, headers, config) {
                         console.log('Request failed.');

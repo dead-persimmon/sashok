@@ -1,45 +1,38 @@
 #!/usr/bin/env python
 
-import debug
-import html
-import os
+import debug, os, cgi, html
 
-#def request_env(environment):
-#    lines = []
-#    max_key_width = len(max(environment.keys(), key = lambda x: len(x)))
-#    for key, value in sorted(environment.items()):
-#        lines += [('{:>%d}   {}' % max_key_width).format(key, html.escape(str(value)))]
-#    return '<html><body><pre>%s</pre></body></html>' % '\n'.join(lines)
+BAD_REQUEST = ('400 Bad Request', [('Content-Type', 'text/html')], 'Nope!')
 
-def request_torrents(environment):
-    if debug.local_run():
-        return open('torrents.debug', 'rb').read()
+def request_root(env):
+    response_status = '200 OK'
+    response_headers = [('Content-Type', 'text/html')]
+    if debug.local_run(): response_body = open('index.html', 'rb').read()
+    else: response_body = open(env['OPENSHIFT_REPO_DIR'] + 'index.html', 'rb').read()
+    return (response_status, response_headers, response_body)
+
+def request_torrents(env):
+    query = cgi.parse(None, env)
+    if 'num_days' in query.keys() and 'offset' in query.keys():
+        from torrents import torrents
+        response_status = '200 OK'
+        response_headers = [('Content-Type', 'application/json')]
+        response_body = torrents(int(query['num_days'][0]), int(query['offset'][0]))
     else:
-        import cgi
-        query = cgi.parse(None, environment)
-        if 'num_days' in query.keys() and 'offset' in query.keys():
-            from torrents import torrents
-            return torrents(int(query['num_days'][0]), int(query['offset'][0])).encode('utf-8')
-        else:
-            # fix me
-            return '{"0":[{"title":"Failed to pull torrents from the database, somehow."}]}'.encode('utf-8')
+        return BAD_REQUEST
+    return (response_status, response_headers, response_body)
 
-def request_root(environment):
-    if debug.local_run(): return open('index.html', 'rb').read()
-    else: return open(environment['OPENSHIFT_REPO_DIR'] + 'index.html', 'rb').read()
+def application(env, start_response):
+    allowed_requests = {'/': request_root, '/torrents': request_torrents}
 
-def application(environment, start_response):
-    request_map = {'/': request_root, '/torrents': request_torrents}
-    
-    request = environment['PATH_INFO']
-    if request in request_map.keys(): reply = request_map[request](environment)
-    else: reply = 'Try again!'
+    request = env['PATH_INFO']
+    if request in allowed_requests.keys(): response_status, response_headers, response_body = allowed_requests[request](env)
+    else: response_status, response_headers, response_body = BAD_REQUEST
 
-    status = '200 OK'
-    response_headers = [('Content-Type', 'text/html'), ('Content-Length', str(len(reply)))]
-
-    start_response(status, response_headers)
-    return [reply]
+    if type(response_body) != bytes:
+        response_body = response_body.encode('utf-8')
+    start_response(response_status, response_headers)
+    return [response_body]
 
 if __name__ == '__main__':
     from wsgiref.simple_server import make_server

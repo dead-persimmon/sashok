@@ -5,16 +5,16 @@ from urllib.request import urlopen
 from xml.etree import ElementTree
 from pymongo import MongoClient
 
-def main():
-    if debug.local_run():
-        lock_file_name = 'crawler.lock'
-        log_file_name = 'crawler.log'
-        mongodb_url = 'mongodb://localhost:27017/'
-    else:
-        lock_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.lock'
-        log_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.log'
-        mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
+if debug.local_run():
+    lock_file_name = 'crawler.lock'
+    log_file_name = 'crawler.log'
+    mongodb_url = 'mongodb://localhost:27017/'
+else:
+    lock_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.lock'
+    log_file_name = os.environ['OPENSHIFT_REPO_DIR'] + 'crawler.log'
+    mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
 
+def main():
     logging.basicConfig(filename = log_file_name, level = logging.DEBUG)
     log = logging.getLogger('crawler')
     log.info('Starting at %s', datetime.utcnow())
@@ -68,14 +68,15 @@ def main():
     try:
         with MongoClient(mongodb_url) as client:
             collection = client.sashok.torrents
-            for torrent in torrents:
-                collection.save(torrent)
+            for torrent in torrents: collection.save(torrent)
     except Exception:
         log.exception('Failed to commit data to MongoDB.')
 
     log.info('Collected [%d] items.', len(torrents))
+    log.info('---')
 
     try: os.remove(lock_file_name)
     except Exception: log.exception('Lock file lives on! Ho!')
 
-if __name__ == '__main__': main()
+if __name__ == '__main__':
+    main()

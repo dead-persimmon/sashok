@@ -1,10 +1,7 @@
-import debug
+import debug, os
 
-if debug.local_run():
-    mongodb_url = 'mongodb://localhost:27017/'
-else:
-    import os
-    mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
+if debug.local_run(): mongodb_url = 'mongodb://localhost:27017/'
+else: mongodb_url = os.environ['OPENSHIFT_MONGODB_DB_URL']
 
 from pymongo import MongoClient
 from datetime import datetime, timedelta
@@ -56,7 +53,7 @@ def build_normalize_title():
 
 normalize_title = build_normalize_title()
 
-def pull_torrents(num_days = 2, offset = 0):
+def torrents(num_days = 2, offset = 0):
     days = [{} for _ in range(num_days)]
     
     ts_now = datetime.utcnow()
@@ -90,7 +87,3 @@ def pull_torrents(num_days = 2, offset = 0):
 
     if debug.local_run(): return json.dumps(days, indent = 2)
     else: return json.dumps(days)
-    
-if __name__ == '__main__':
-    with open('torrents.debug', 'w+') as torrents_file:
-        torrents_file.write(pull_torrents(200))

@@ -1,3 +1,4 @@
-﻿def local_run():
-	from os.path import isfile
+from os.path import isfile
+
+def local_run():
 	return isfile('local.debug')
