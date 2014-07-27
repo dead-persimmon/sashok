@@ -59,6 +59,24 @@ def build_normalize_title():
 
 normalize_title = build_normalize_title()
 
+def global_downloads():
+    groups = {}
+    with MongoClient(mongodb_url) as client:
+        collection = client.sashok.torrents
+        for torrent in collection.find():
+            group_title, episode_number = normalize_title(torrent['title'])
+            if group_title not in groups:
+                groups[group_title] = { 'downloads': 0, 'num_files': 0 }
+            groups[group_title]['downloads'] += int(torrent['downloads'])
+            groups[group_title]['num_files'] += 1
+            
+    filtered_groups = []
+    for key in groups.keys():
+        group = groups[key]
+        if group['num_files'] >= 10:
+            filtered_groups.append(dict({'title': key, 'downloads_per_file': group['downloads'] // group['num_files']}, **group))
+    return json.dumps(filtered_groups, indent = 2)
+            
 def torrents(num_days = 2, offset = 0):
     days = [{} for _ in range(num_days)]
     
@@ -76,7 +94,7 @@ def torrents(num_days = 2, offset = 0):
             group_title, episode_number = normalize_title(torrent['title'])
             group_id = group_title + ' EP:' + str(episode_number) if episode_number else group_title
             
-            if group_id not in day:
+            if group_id not in day.keys():
                 day[group_id] = { 'title': group_title, 'torrents': [], 'seeders': 0, 'leechers': 0, 'downloads': 0 }
 
             day[group_id]['episode'] = episode_number
@@ -97,4 +115,4 @@ def torrents(num_days = 2, offset = 0):
     return json.dumps(days, indent = 2)
  
 if __name__ == '__main__':
-    print(torrents(1))
+    print( global_downloads() )
