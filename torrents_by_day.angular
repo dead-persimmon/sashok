@@ -52,19 +52,28 @@
             }
 
             $scope.days = [];
-            var daysOffset = 0;
+            //var daysOffset = 0;
             
-            ($scope.pullTorrents = function () {
-                $http.get(['torrents?num_days=', $scope.settings.downloadDaysPerRequest, '&offset=', daysOffset].join(''))
+            $scope.pullTorrents = function (day_delta) {
+                $scope.days[day_delta].loading = true;
+                $scope.days[day_delta].failedToLoad = false;
+                //$http.get(['torrents?num_days=', $scope.settings.downloadDaysPerRequest, '&offset=', daysOffset].join(''))
+                $http.get('/torrents?day_delta=' + day_delta)
                     .success(function (data, status, headers, config) {
-                        $scope.days = $scope.days.concat(data);
-                        daysOffset += 1;
+                        console.log('got data for delta', day_delta, data);
+                        $scope.days[day_delta].data = data;
+                        $scope.days[day_delta].loading = false;
                     })
                     .error(function (data, status, headers, config) {
-                        console.log('Request failed.');
-                        console.log(arguments);
+                        $scope.days[day_delta].failedToLoad = true;
+                        $scope.days[day_delta].loading = false;
                     });
-            })();
+            };
+            
+            for (var day_delta = 0; day_delta < 2; day_delta += 1) {
+                $scope.days[day_delta] = { data: [] };
+                $scope.pullTorrents(day_delta);
+            }
             
             $scope.newHighlight = null;
             $scope.selectedHighlight = null;
@@ -134,17 +143,22 @@
 
     <div class='container-fluid'>
         <div class='row'>
-            <div class='col-md-6' ng-repeat='day in days' ng-show='filteredDay.length > 0'>
+            <div class='col-md-6' ng-repeat='day in days'>
                 <a name='day-{{$index}}'></a>
                 <div class='panel panel-default'>
                     <div class='panel-heading'>
                         Day &minus;{{$index}}
                             <em class='pull-right'>
-                                Displaying {{filteredDay.length}} of {{day.length}} groups.
-                                <a ng-show='filteredDay.length < day.length' ng-click='day.limit = day.length' href='#day-{{$index}}'>Show everything?</a>
+                                Displaying {{filteredDay.length}} of {{day.data.length}} groups.
+                                <a ng-show='filteredDay.length < day.data.length' ng-click='day.limit = day.data.length' href='#day-{{$index}}'>Show everything?</a>
                             </em>
                     </div>
-                    <table class='table table-condensed'>
+                    <div class='panel-body' ng-show='day.failedToLoad || day.loading'>
+                        <em ng-show='day.failedToLoad'>Failed to load data for this day. For some reason. <a href='#day-{{$index}}' ng-click='pullTorrents($index)'>Try again?</a></em>
+                        <em ng-show='day.loading'>Loading...</em>
+                        <em ng-show='!day.loading && !day.failedToLoad && filteredDay.length > 0'>This day appears to be empty.</em>
+                    </div>
+                    <table class='table table-condensed' ng-show='filteredDay.length > 0'>
                         <thead>
                             <tr>
                                 <th width='1%'>&nbsp;</th>
@@ -156,7 +170,7 @@
                         </thead>
                         <tbody>
                                 <tr
-                                    ng-repeat-start='group in filteredDay = (day | orderBy:settings.orderByField:settings.orderDescending | limitTo:(day.limit || settings.displayNumGroupsPerDay))'
+                                    ng-repeat-start='group in filteredDay = (day.data | orderBy:settings.orderByField:settings.orderDescending | limitTo:(day.limit || settings.displayNumGroupsPerDay))'
                                     ng-init='filteredTorrents = (group.torrents | orderBy:settings.orderByField:settings.orderDescending)'
                                     ng-class='{success: testAgainstHighlights(group.title)}'
                                 >
@@ -175,7 +189,7 @@
                                 </tr>
                                 <tr class='small' ng-repeat-end ng-show='group.expanded' ng-repeat='torrent in filteredTorrents'>
                                     <td>&nbsp;</td>
-                                    <td><a href='{{torrent.link}}'>{{torrent.title}}</a></td>
+                                    <td><a href='{{torrent.link}}'>{{torrent.title}} [{{ torrent.timestamp }}]</a></td>
                                     <td class='text-right' ng-show='settings.displayNumSeeders'>{{torrent.seeders | number}}</td>
                                     <td class='text-right' ng-show='settings.displayNumLeechers'>{{torrent.leechers | number}}</td>
                                     <td class='text-right' ng-show='settings.displayNumDownloads'>{{torrent.downloads | number}}</td>

@@ -7,7 +7,7 @@ BAD_REQUEST = ('400 Bad Request', [('Content-Type', 'text/html')], 'Nope!')
 def request_root_page(env):
     response_status = '200 OK'
     response_headers = [('Content-Type', 'text/html')]
-    if debug.local_run(): response_body = open('index.html', 'rb').read()
+    if debug.local_run(): response_body = open('torrents_by_day.angular', 'rb').read()
     else: response_body = open(env['OPENSHIFT_REPO_DIR'] + 'index.html', 'rb').read()
     return (response_status, response_headers, response_body)
 
@@ -21,11 +21,11 @@ def request_global_downloads_page(env):
 
 def request_torrents(env):
     query = cgi.parse(None, env)
-    if 'num_days' in query.keys() and 'offset' in query.keys():
+    if 'day_delta' in query.keys():
         from torrents import torrents
         response_status = '200 OK'
         response_headers = [('Content-Type', 'application/json')]
-        response_body = torrents(int(query['num_days'][0]), int(query['offset'][0]))
+        response_body = torrents(int(query['day_delta'][0]))
     else:
         return BAD_REQUEST
     return (response_status, response_headers, response_body)

@@ -42,7 +42,7 @@
             </thead>
             <tbody>
                 <tr ng-repeat='group in data | orderBy:orderByField:true'>
-                    <td>{{ group.title }}</td>
+                    <td>{{ group.title }} <small>[{{ group.most_recent_file }} days]</small></td>
                     <td>{{ group.num_files | number }}</td>
                     <td>{{ group.downloads_per_file | number }}</td>
                     <td>{{ group.downloads | number }}</td>

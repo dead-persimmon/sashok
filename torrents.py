@@ -60,59 +60,65 @@ def build_normalize_title():
 normalize_title = build_normalize_title()
 
 def global_downloads():
+    from datetime import datetime
+    from datetime import timedelta
+    
     groups = {}
     with MongoClient(mongodb_url) as client:
         collection = client.sashok.torrents
         for torrent in collection.find():
             group_title, episode_number = normalize_title(torrent['title'])
             if group_title not in groups:
-                groups[group_title] = { 'downloads': 0, 'num_files': 0 }
-            groups[group_title]['downloads'] += int(torrent['downloads'])
-            groups[group_title]['num_files'] += 1
+                groups[group_title] = { 'downloads': 0, 'num_files': 0, 'most_recent_file': datetime.min }
+            group = groups[group_title]
+            group['most_recent_file'] = max(group['most_recent_file'], torrent['timestamp'])
+            group['downloads'] += int(torrent['downloads'])
+            group['num_files'] += 1
             
     filtered_groups = []
+    dt_now = datetime.now()
+    
     for key in groups.keys():
         group = groups[key]
-        if group['num_files'] >= 10:
+        most_recent_file = (dt_now - group['most_recent_file']).days
+        if group['num_files'] > 1 and most_recent_file <= 10:
+            group['most_recent_file'] = most_recent_file
             filtered_groups.append(dict({'title': key, 'downloads_per_file': group['downloads'] // group['num_files']}, **group))
     return json.dumps(filtered_groups, indent = 2)
             
-def torrents(num_days = 2, offset = 0):
-    days = [{} for _ in range(num_days)]
+def torrents(day_delta = 0):
+    day_floor = datetime.utcnow().date() - timedelta(days = day_delta)
+    day_ceil = datetime.combine(day_floor, datetime.max.time())
+    day_floor = datetime.combine(day_floor, datetime.min.time())
     
-    ts_now = datetime.utcnow()
-    ts_ceil = ts_now - timedelta(days = num_days * offset)
-    ts_floor = ts_ceil - timedelta(days = num_days)
+    groups = {}
     
     with MongoClient(mongodb_url) as client:
         collection = client.sashok.torrents
-        for torrent in collection.find({ '$and': [{ 'timestamp': { '$lte': ts_ceil } }, { 'timestamp': { '$gte': ts_floor } }] }):
-            day = days[(ts_now - torrent['timestamp']).days - num_days * offset]
-            
+        for torrent in collection.find({ '$and': [{ 'timestamp': { '$lte': day_ceil } }, { 'timestamp': { '$gte': day_floor } }] }):
             #torrent['timestamp'] = calendar.timegm(torrent['timestamp'].utctimetuple())
             
             group_title, episode_number = normalize_title(torrent['title'])
-            group_id = group_title + ' EP:' + str(episode_number) if episode_number else group_title
+            group_id = ''.join((group_title, ' [EP:', str(episode_number), ']')) if episode_number else group_title
             
-            if group_id not in day.keys():
-                day[group_id] = { 'title': group_title, 'torrents': [], 'seeders': 0, 'leechers': 0, 'downloads': 0 }
+            if group_id not in groups.keys():
+                groups[group_id] = { 'title': group_title, 'torrents': [], 'seeders': 0, 'leechers': 0, 'downloads': 0 }
 
-            day[group_id]['episode'] = episode_number
-            day[group_id]['torrents'].append(torrent)
-            day[group_id]['seeders'] += int(torrent['seeders'])
-            day[group_id]['leechers'] += int(torrent['leechers'])
-            day[group_id]['downloads'] += int(torrent['downloads'])
+            groups[group_id]['episode'] = episode_number
+            groups[group_id]['torrents'].append(torrent)
+            groups[group_id]['seeders'] += int(torrent['seeders'])
+            groups[group_id]['leechers'] += int(torrent['leechers'])
+            groups[group_id]['downloads'] += int(torrent['downloads'])
             
             del torrent['_id']
-            del torrent['timestamp']
+            #del torrent['timestamp']
+            torrent['timestamp'] = torrent['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
 
-    for index, day in enumerate(days):
-        groups = []
-        for group_id in day.keys():
-            groups.append(dict(day[group_id], **{ 'group_id': group_id }))
-        days[index] = groups
+    groups_array = []
+    for group_id in groups.keys():
+        groups_array.append(dict(groups[group_id], **{ 'group_id': group_id }))
 
-    return json.dumps(days, indent = 2)
+    return json.dumps(groups_array)
  
 if __name__ == '__main__':
-    print( global_downloads() )
+    print( torrents() )
