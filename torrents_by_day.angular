@@ -55,12 +55,13 @@
             //var daysOffset = 0;
             
             $scope.pullTorrents = function (day_delta) {
+                var day_delta = day_delta || $scope.days.length;
+                if (!$scope.days[day_delta]) $scope.days[day_delta] = { data: [] };
                 $scope.days[day_delta].loading = true;
                 $scope.days[day_delta].failedToLoad = false;
                 //$http.get(['torrents?num_days=', $scope.settings.downloadDaysPerRequest, '&offset=', daysOffset].join(''))
                 $http.get('/torrents?day_delta=' + day_delta)
                     .success(function (data, status, headers, config) {
-                        console.log('got data for delta', day_delta, data);
                         $scope.days[day_delta].data = data;
                         $scope.days[day_delta].loading = false;
                     })
@@ -71,7 +72,7 @@
             };
             
             for (var day_delta = 0; day_delta < 2; day_delta += 1) {
-                $scope.days[day_delta] = { data: [] };
+                
                 $scope.pullTorrents(day_delta);
             }
             
