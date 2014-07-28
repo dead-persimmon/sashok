@@ -8,7 +8,7 @@ def request_root_page(env):
     response_status = '200 OK'
     response_headers = [('Content-Type', 'text/html')]
     if debug.local_run(): response_body = open('torrents_by_day.angular', 'rb').read()
-    else: response_body = open(env['OPENSHIFT_REPO_DIR'] + 'index.html', 'rb').read()
+    else: response_body = open(env['OPENSHIFT_REPO_DIR'] + 'torrents_by_day.angular', 'rb').read()
     return (response_status, response_headers, response_body)
 
 def request_global_downloads_page(env):
