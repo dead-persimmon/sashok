@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return 'Testing—'
+    return 'Testing'
 
 #import debug, os, cgi, html
 #
