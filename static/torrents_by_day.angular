@@ -60,7 +60,7 @@
                 $scope.days[dayDelta].failedToLoad = false;
                 $http.get('/torrents/' + dayDelta)
                     .success(function (data, status, headers, config) {
-                        $scope.days[dayDelta].data = data;
+                        $scope.days[dayDelta].data = data.list;
                         $scope.days[dayDelta].loading = false;
                     })
                     .error(function (data, status, headers, config) {

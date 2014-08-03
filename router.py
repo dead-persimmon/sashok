@@ -11,7 +11,8 @@ def torrents_by_day():
 @app.route('/torrents/<day_delta>')
 def torrents(day_delta):
     from torrents import torrents_for_day
-    return flask.Response(torrents_for_day(day_delta), mimetype = 'application/json', status = '200')
+    return flask.jsonify(torrents_for_day(day_delta))
+    #return flask.Response(, mimetype = 'application/json')
     
 if __name__ == '__main__':
     app.run(debug = True)

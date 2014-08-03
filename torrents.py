@@ -112,11 +112,12 @@ def torrents_for_day(day_delta):
             del torrent['_id']
             torrent['timestamp'] = torrent['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
 
-    groups_array = []
+    groups_list = []
     for group_id in groups.keys():
-        groups_array.append(dict(groups[group_id], **{ 'group_id': group_id }))
+        groups_list.append(dict(groups[group_id], **{ 'group_id': group_id }))
 
-    return json.dumps(groups_array)
+    #return json.dumps(groups_list)
+    return { 'list': groups_list }
  
 #if __name__ == '__main__':
 #    print( torrents() )
