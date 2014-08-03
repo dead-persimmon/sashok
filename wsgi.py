@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from ATL import app as application
+from router import app as application
 
 #import debug, os, cgi, html
 #

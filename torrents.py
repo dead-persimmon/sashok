@@ -86,7 +86,8 @@ def global_downloads():
             filtered_groups.append(dict({'title': key, 'downloads_per_file': group['downloads'] // group['num_files']}, **group))
     return json.dumps(filtered_groups, indent = 2)
             
-def torrents(day_delta = 0):
+def torrents_for_day(day_delta):
+    day_delta = int(day_delta)
     day_floor = datetime.utcnow().date() - timedelta(days = day_delta)
     day_ceil = datetime.combine(day_floor, datetime.max.time())
     day_floor = datetime.combine(day_floor, datetime.min.time())
@@ -96,8 +97,6 @@ def torrents(day_delta = 0):
     with MongoClient(mongodb_url) as client:
         collection = client.sashok.torrents
         for torrent in collection.find({ '$and': [{ 'timestamp': { '$lte': day_ceil } }, { 'timestamp': { '$gte': day_floor } }] }):
-            #torrent['timestamp'] = calendar.timegm(torrent['timestamp'].utctimetuple())
-            
             group_title, episode_number = normalize_title(torrent['title'])
             group_id = ''.join((group_title, ' [EP:', str(episode_number), ']')) if episode_number else group_title
             
@@ -111,7 +110,6 @@ def torrents(day_delta = 0):
             groups[group_id]['downloads'] += int(torrent['downloads'])
             
             del torrent['_id']
-            #del torrent['timestamp']
             torrent['timestamp'] = torrent['timestamp'].strftime("%Y-%m-%d %H:%M:%S")
 
     groups_array = []
@@ -120,5 +118,5 @@ def torrents(day_delta = 0):
 
     return json.dumps(groups_array)
  
-if __name__ == '__main__':
-    print( torrents() )
+#if __name__ == '__main__':
+#    print( torrents() )

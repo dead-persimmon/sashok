@@ -52,28 +52,26 @@
             }
 
             $scope.days = [];
-            //var daysOffset = 0;
             
-            $scope.pullTorrents = function (day_delta) {
-                var day_delta = day_delta || $scope.days.length;
-                if (!$scope.days[day_delta]) $scope.days[day_delta] = { data: [] };
-                $scope.days[day_delta].loading = true;
-                $scope.days[day_delta].failedToLoad = false;
-                //$http.get(['torrents?num_days=', $scope.settings.downloadDaysPerRequest, '&offset=', daysOffset].join(''))
-                $http.get('/torrents?day_delta=' + day_delta)
+            $scope.pullTorrents = function (dayDelta) {
+                var dayDelta = dayDelta || $scope.days.length;
+                if (!$scope.days[dayDelta]) $scope.days[dayDelta] = { data: [] };
+                $scope.days[dayDelta].loading = true;
+                $scope.days[dayDelta].failedToLoad = false;
+                $http.get('/torrents/' + dayDelta)
                     .success(function (data, status, headers, config) {
-                        $scope.days[day_delta].data = data;
-                        $scope.days[day_delta].loading = false;
+                        $scope.days[dayDelta].data = data;
+                        $scope.days[dayDelta].loading = false;
                     })
                     .error(function (data, status, headers, config) {
-                        $scope.days[day_delta].failedToLoad = true;
-                        $scope.days[day_delta].loading = false;
+                        console.log(data, status, headers, config);
+                        $scope.days[dayDelta].failedToLoad = true;
+                        $scope.days[dayDelta].loading = false;
                     });
             };
             
-            for (var day_delta = 0; day_delta < 2; day_delta += 1) {
-                
-                $scope.pullTorrents(day_delta);
+            for (var dayDelta = 0; dayDelta < 2; dayDelta += 1) {
+                $scope.pullTorrents(dayDelta);
             }
             
             $scope.newHighlight = null;
