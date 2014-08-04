@@ -57,11 +57,7 @@ _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
     
     $scope.deleteHighlight = function () {
         if ($scope.selectedHighlight != null) {
-            var updatedHighlights = {},
-                activeHighlights = $scope.settings.highlights;
-            for (var key in activeHighlights) {
-                updatedHighlights[key] = activeHighlights[key];
-            }
+            var updatedHighlights = $scope.settings.highlights;
             delete updatedHighlights[$scope.selectedHighlight];
             $scope.settings.highlights = updatedHighlights;
             updateHighlightExpressions();
@@ -71,11 +67,10 @@ _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
     
     $scope.createHighlight = function () {
         if ($scope.newHighlight != null) {
-            var updatedHighlights = {},
-                activeHighlights = $scope.settings.highlights;
-            for (var key in activeHighlights) {
+            var activeHighlights = $scope.settings.highlights,
+                updatedHighlights = {};
+            for (var key in activeHighlights)
                 updatedHighlights[key] = activeHighlights[key];
-            }
             updatedHighlights[$scope.newHighlight] = { lastDownloadedEpisode: 0 };
             $scope.settings.highlights = updatedHighlights;
             updateHighlightExpressions();
@@ -85,7 +80,7 @@ _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
     
     var updateHighlightExpressions = function () {
         $scope.highlightsCache = $scope.settings.highlights;
-        $scope.highlightExpressions = [];
+        $scope.highlightExpressions = {};
         for (var key in $scope.highlightsCache) {
             var tokens = key.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&"); // escaping RegExp special chars
             tokens = tokens.split(' ');
@@ -95,19 +90,32 @@ _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
             if (expression.length > 0) {
                 expression = '.*' + expression.join('.*') + '.*';
                 expression = RegExp(expression, 'i');
-                $scope.highlightExpressions.push(expression);
+                $scope.highlightExpressions[key] = expression;
             }
         }
     };
 
     updateHighlightExpressions();
 
-    $scope.testAgainstHighlights = function (title) {
-        for (var index in $scope.highlightExpressions) {
-            if ($scope.highlightExpressions[index].test(title))
-                return true;
+    $scope.testAgainstHighlights = function (title, episode) {
+        for (var key in $scope.highlightExpressions) {
+            if ($scope.highlightExpressions[key].test(title)) {
+                if (episode > $scope.settings.highlights[key].lastDownloadedEpisode) {
+                    return key;
+                }
+            }
         }
         return false;
+    };
+    
+    $scope.groupClick = function (title, episode) {
+        var key = $scope.testAgainstHighlights(title, episode);
+        if (key) {
+            var highlights = $scope.settings.highlights;
+            highlights[key].lastDownloadedEpisode = episode;
+            $scope.highlightsCache = highlights;
+            $scope.settings.highlights = highlights;
+        }
     };
 
     debug = $scope;

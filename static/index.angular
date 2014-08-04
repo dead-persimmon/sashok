@@ -60,7 +60,7 @@
                                 <tr
                                     ng-repeat-start='group in filteredDay = (day.data | orderBy:settings.orderByField:settings.orderDescending | limitTo:(day.expanded ? day.data.length : settings.displayNumGroupsPerDay))'
                                     ng-init='filteredTorrents = (group.torrents | orderBy:settings.orderByField:settings.orderDescending)'
-                                    ng-class='{success: testAgainstHighlights(group.title)}'
+                                    ng-class='{success: testAgainstHighlights(group.title, group.episode)}'
                                 >
                                     <td>
                                         <span
@@ -69,13 +69,18 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a href='{{filteredTorrents[0].link}}'>{{group.title}}<strong ng-show='group.episode'> Ep. {{group.episode}}</strong></a>
+                                        <a ng-click='groupClick(group.title, group.episode)' href='{{filteredTorrents[0].link}}'>{{ group.title }}<strong ng-show='group.episode'> Ep. {{ group.episode }}</strong></a>
                                     </td>
                                     <td class='text-right' ng-show='settings.displayNumSeeders'>{{group.seeders | number}}</td>
                                     <td class='text-right' ng-show='settings.displayNumLeechers'>{{group.leechers | number}}</td>
                                     <td class='text-right' ng-show='settings.displayNumDownloads'>{{group.downloads | number}}</td>
                                 </tr>
-                                <tr class='small' ng-repeat-end ng-show='group.expanded' ng-repeat='torrent in filteredTorrents'>
+                                <tr
+                                    class='small'
+                                    ng-repeat-end
+                                    ng-show='group.expanded'
+                                    ng-repeat='torrent in filteredTorrents'
+                                >
                                     <td>&nbsp;</td>
                                     <td><a href='{{torrent.link}}'>{{torrent.title}} [{{ torrent.timestamp }}]</a></td>
                                     <td class='text-right' ng-show='settings.displayNumSeeders'>{{torrent.seeders | number}}</td>
