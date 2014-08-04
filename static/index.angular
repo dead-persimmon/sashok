@@ -28,14 +28,24 @@
                         Day &minus;{{$index}}
                             <em class='pull-right'>
                                 Displaying {{filteredDay.length}} of {{day.data.length}} groups.
-                                <a ng-show='filteredDay.length < day.data.length' ng-click='day.limit = day.data.length' href='#day-{{$index}}'>Show everything?</a>
+                                <a ng-show='filteredDay.length < day.data.length' ng-click='day.expanded = true' href='#day-{{$index}}'>Show everything?</a>
+                                <a ng-show='day.expanded' ng-click='day.expanded = false' href='#day-{{$index}}'>Truncate?</a>
                             </em>
                     </div>
-                    <div class='panel-body' ng-show='day.failedToLoad || day.loading'>
-                        <em ng-show='day.failedToLoad'>Failed to load data for this day. For some reason. <a href='#day-{{$index}}' ng-click='pullTorrents($index)'>Try again?</a></em>
-                        <em ng-show='day.loading'>Loading...</em>
-                        <em ng-show='!day.loading && !day.failedToLoad && filteredDay.length > 0'>This day appears to be empty.</em>
+                    
+                    <div class='panel-body' ng-show='day.status != "ok"'>
+                        <em ng-show='day.status == "loading"'>Loading...</em>
+                        <em ng-show='day.status == "failed to load"'>Failed to load data for this day, for some reason. <a href='#day-{{$index}}' ng-click='pullTorrents($index)'>Try again?</a></em>
                     </div>
+                    
+                    <div class='panel-body' ng-show='day.status == "ok" && filteredDay.length == 0 && day.data.length != 0'>
+                        <em>You have filtered everything out.</em>
+                    </div>
+                    
+                    <div class='panel-body' ng-show='day.status == "ok" && day.data.length == 0'>
+                        <em>Nothing for this day.</em>
+                    </div>
+
                     <table class='table table-condensed' ng-show='filteredDay.length > 0'>
                         <thead>
                             <tr>
@@ -48,7 +58,7 @@
                         </thead>
                         <tbody>
                                 <tr
-                                    ng-repeat-start='group in filteredDay = (day.data | orderBy:settings.orderByField:settings.orderDescending | limitTo:(day.limit || settings.displayNumGroupsPerDay))'
+                                    ng-repeat-start='group in filteredDay = (day.data | orderBy:settings.orderByField:settings.orderDescending | limitTo:(day.expanded ? day.data.length : settings.displayNumGroupsPerDay))'
                                     ng-init='filteredTorrents = (group.torrents | orderBy:settings.orderByField:settings.orderDescending)'
                                     ng-class='{success: testAgainstHighlights(group.title)}'
                                 >
@@ -106,7 +116,7 @@
                     <div class='form-group'>
                         <label class='control-label col-sm-4'>Group limit</label>
                         <div class='col-sm-4'><input ng-model='settings.displayNumGroupsPerDay' type='text' class='form-control'></div>
-                        <div class='col-sm-4'><p class='help-block'>{{strings.displayNumGroupsPerDayHelp}}</p></div>
+                        <div class='col-sm-4'><p class='help-block'>Maximum number of groups to display in a single day.</p></div>
                     </div>
                 </form>
             </div>
@@ -128,10 +138,10 @@
                         <label class='control-label col-sm-4'>Active highlights</label>
                         <div class='col-sm-6'>
                             <select ng-model='selectedHighlight' class='form-control'>
-                                <option ng-repeat='highlight in settings.highlights track by $index'>{{highlight}}</option>
+                                <option ng-repeat='(key, value) in highlightsCache'>{{ key }}</option>
                             </select>
                         </div>
-                        <div class='col-sm-2'><button ng-click='deleteSelectedHighlight()' class='btn btn-default'>Delete</button></div>
+                        <div class='col-sm-2'><button ng-click='deleteHighlight()' class='btn btn-default'>Delete</button></div>
                     </div>
                     <div class='form-group'>
                         <label class='control-label col-sm-4'>New highlight</label>
