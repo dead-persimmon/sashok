@@ -3,6 +3,14 @@ var debug;
 var _app = angular.module('_app', []);
 
 _app.controller('_controller', ['$scope', '$http', function ($scope, $http) {
+    var settingsVersion = 1;
+    if (localStorage.getItem('settingsVersion') == null)
+        localStorage.setItem('settingsVersion', 0);
+    if (localStorage.getItem('settingsVersion') != settingsVersion) {
+        localStorage.clear();
+        localStorage.setItem('settingsVersion', settingsVersion);
+    }
+
     $scope.settings = {
         defaultValues: [
             { name: 'orderByField', defaultValue: 'downloads' },
